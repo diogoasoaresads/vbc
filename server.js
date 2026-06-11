@@ -482,24 +482,43 @@ app.delete('/api/users/:username', requireAuth, async (req, res) => {
     }
 });
 
+// Auxiliar para desativar cache em arquivos de código e interface (HTML, JS, CSS)
+const setNoCacheHeaders = (res, path) => {
+    if (path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+    }
+};
+
 // --- SERVIR ARQUIVOS ESTÁTICOS COM SEGURANÇA ---
-app.use('/css', express.static(path.join(__dirname, 'css')));
-app.use('/js', express.static(path.join(__dirname, 'js')));
+app.use('/css', express.static(path.join(__dirname, 'css'), { setHeaders: setNoCacheHeaders }));
+app.use('/js', express.static(path.join(__dirname, 'js'), { setHeaders: setNoCacheHeaders }));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
+// Envia cabeçalhos sem cache para os arquivos raiz servidos dinamicamente
+const sendFileWithoutCache = (res, filePath) => {
+    res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    });
+    res.sendFile(filePath);
+};
+
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    sendFileWithoutCache(res, path.join(__dirname, 'index.html'));
 });
 
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
+    sendFileWithoutCache(res, path.join(__dirname, 'admin.html'));
 });
 
 // Servir qualquer arquivo raiz estático autorizado
 app.get('/:file', (req, res, next) => {
     const allowedRootFiles = ['index.html', 'admin.html', 'favicon.ico'];
     if (allowedRootFiles.includes(req.params.file)) {
-        res.sendFile(path.join(__dirname, req.params.file));
+        sendFileWithoutCache(res, path.join(__dirname, req.params.file));
     } else {
         next();
     }
