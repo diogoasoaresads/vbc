@@ -67,7 +67,11 @@ async function initDb() {
             )
         `);
 
-        // Tabela de Configurações (Garante apenas 1 linha com CHECK constraint)
+        // Tabela de Configurações - Recria com as novas colunas
+        // Nota: Para migração limpa sem conflitos de colunas em desenvolvimento, 
+        // recriamos a tabela caso ela não possua uma das novas colunas
+        await dbRun(`DROP TABLE IF EXISTS settings`);
+
         await dbRun(`
             CREATE TABLE IF NOT EXISTS settings (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -75,7 +79,16 @@ async function initDb() {
                 whatsappMessage TEXT NOT NULL,
                 businessName TEXT NOT NULL,
                 classPrice TEXT NOT NULL,
-                courtPrice TEXT NOT NULL
+                courtPrice TEXT NOT NULL,
+                businessAddress TEXT NOT NULL,
+                instagramUrl TEXT NOT NULL,
+                businessEmail TEXT NOT NULL,
+                classSchedules TEXT NOT NULL,
+                businessHours TEXT NOT NULL,
+                beachTennisPrice TEXT NOT NULL,
+                functionalPrice TEXT NOT NULL,
+                alertBarActive INTEGER DEFAULT 0,
+                alertBarText TEXT
             )
         `);
 
@@ -104,14 +117,27 @@ async function initDb() {
         const settingsRow = await dbGet('SELECT * FROM settings WHERE id = 1');
         if (!settingsRow) {
             await dbRun(`
-                INSERT INTO settings (id, whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice)
-                VALUES (1, ?, ?, ?, ?, ?)
+                INSERT INTO settings (
+                    id, whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice,
+                    businessAddress, instagramUrl, businessEmail, classSchedules, businessHours,
+                    beachTennisPrice, functionalPrice, alertBarActive, alertBarText
+                )
+                VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `, [
                 '5521971475005',
                 'Olá! Vim pelo site do Varandas Beach Club e gostaria de informações sobre aulas/aluguel de quadra.',
                 'Varandas Beach Club',
                 'R$ 150/mês',
-                'R$ 80/hora'
+                'R$ 80/hora',
+                'Estrada Visconde de Sinimbu, 785',
+                'https://www.instagram.com/varandasbeachclub',
+                'contato@varandasbeachclub.com.br',
+                '18:00 | 19:00 | 20:00',
+                '18h às 23h',
+                'Consulte-nos',
+                'A partir de R$ 130',
+                1,
+                '🚨 Matrículas abertas para as novas turmas de Beach Tennis das 18h!'
             ]);
             console.log('Configurações padrão inseridas no SQLite.');
         }
@@ -293,7 +319,14 @@ app.delete('/api/leads/:id', requireAuth, async (req, res) => {
 // 3. Configurações
 app.get('/api/settings', async (req, res) => {
     try {
-        const settings = await dbGet('SELECT whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice FROM settings WHERE id = 1');
+        const settings = await dbGet(`
+            SELECT 
+                whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice,
+                businessAddress, instagramUrl, businessEmail, classSchedules, businessHours,
+                beachTennisPrice, functionalPrice, alertBarActive, alertBarText
+            FROM settings 
+            WHERE id = 1
+        `);
         res.json(settings);
     } catch (err) {
         console.error(err);
@@ -302,23 +335,46 @@ app.get('/api/settings', async (req, res) => {
 });
 
 app.put('/api/settings', requireAuth, async (req, res) => {
-    const { whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice } = req.body;
+    const { 
+        whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice,
+        businessAddress, instagramUrl, businessEmail, classSchedules, businessHours,
+        beachTennisPrice, functionalPrice, alertBarActive, alertBarText
+    } = req.body;
+    
     try {
         const current = await dbGet('SELECT * FROM settings WHERE id = 1');
 
         await dbRun(`
             UPDATE settings
-            SET whatsappNumber = ?, whatsappMessage = ?, businessName = ?, classPrice = ?, courtPrice = ?
+            SET whatsappNumber = ?, whatsappMessage = ?, businessName = ?, classPrice = ?, courtPrice = ?,
+                businessAddress = ?, instagramUrl = ?, businessEmail = ?, classSchedules = ?, businessHours = ?,
+                beachTennisPrice = ?, functionalPrice = ?, alertBarActive = ?, alertBarText = ?
             WHERE id = 1
         `, [
-            whatsappNumber || current.whatsappNumber,
-            whatsappMessage || current.whatsappMessage,
-            businessName || current.businessName,
-            classPrice || current.classPrice,
-            courtPrice || current.courtPrice
+            whatsappNumber !== undefined ? whatsappNumber : current.whatsappNumber,
+            whatsappMessage !== undefined ? whatsappMessage : current.whatsappMessage,
+            businessName !== undefined ? businessName : current.businessName,
+            classPrice !== undefined ? classPrice : current.classPrice,
+            courtPrice !== undefined ? courtPrice : current.courtPrice,
+            businessAddress !== undefined ? businessAddress : current.businessAddress,
+            instagramUrl !== undefined ? instagramUrl : current.instagramUrl,
+            businessEmail !== undefined ? businessEmail : current.businessEmail,
+            classSchedules !== undefined ? classSchedules : current.classSchedules,
+            businessHours !== undefined ? businessHours : current.businessHours,
+            beachTennisPrice !== undefined ? beachTennisPrice : current.beachTennisPrice,
+            functionalPrice !== undefined ? functionalPrice : current.functionalPrice,
+            alertBarActive !== undefined ? parseInt(alertBarActive) : current.alertBarActive,
+            alertBarText !== undefined ? alertBarText : current.alertBarText
         ]);
 
-        const updated = await dbGet('SELECT whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice FROM settings WHERE id = 1');
+        const updated = await dbGet(`
+            SELECT 
+                whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice,
+                businessAddress, instagramUrl, businessEmail, classSchedules, businessHours,
+                beachTennisPrice, functionalPrice, alertBarActive, alertBarText
+            FROM settings 
+            WHERE id = 1
+        `);
         res.json(updated);
     } catch (err) {
         console.error(err);

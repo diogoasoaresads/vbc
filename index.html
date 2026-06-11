@@ -16,12 +16,19 @@
 </head>
 <body>
 
+    <!-- Alert Banner / Comunicado do Topo -->
+    <div class="alert-banner" id="alertBanner" style="display: none;">
+        <div class="container alert-banner-container">
+            <span id="alertBannerText">🚨 Matrículas abertas para as novas turmas de Beach Tennis das 18h!</span>
+        </div>
+    </div>
+
     <!-- Header / Navigation -->
-    <header class="main-header">
+    <header class="main-header" id="mainHeader">
         <div class="container header-container">
             <a href="#" class="logo">
                 <i class="fa-solid fa-umbrella-beach"></i>
-                <span>Varandas</span> Beach Club
+                <span id="display-business-name-logo">Varandas</span> Beach Club
             </a>
             <nav class="nav-menu" id="navMenu">
                 <a href="#inicio" class="nav-link active">Início</a>
@@ -41,7 +48,7 @@
         <div class="container hero-container">
             <div class="hero-content">
                 <span class="badge">Pé na areia, saúde no corpo!</span>
-                <h1>O seu momento de esporte e lazer está no <span>Varandas</span></h1>
+                <h1>O seu momento de esporte e lazer está no <span id="display-business-name-hero">Varandas</span></h1>
                 <p>Estrutura de ponta com quadras de areia premium para Futevôlei, Beach Tennis e Treinamento Funcional. Treine com quem entende ou curta com os amigos com vestiário e bar completo.</p>
                 <div class="hero-actions">
                     <a href="#aulas" class="btn btn-primary">Conhecer Aulas</a>
@@ -98,8 +105,8 @@
                 <span class="stat-label">Areia Premium Tratada</span>
             </div>
             <div class="stat-item">
-                <span class="stat-number">18h às 20h</span>
-                <span class="stat-label">Horários das Aulas</span>
+                <span class="stat-number" id="display-hours-stat">18h às 23h</span>
+                <span class="stat-label">Funcionamento</span>
             </div>
             <div class="stat-item">
                 <span class="stat-number">Estrutura</span>
@@ -114,7 +121,7 @@
             <div class="section-header text-center">
                 <span class="section-subtitle">Aulas e Treinamentos</span>
                 <h2>Nossas Modalidades</h2>
-                <p>Confira nossas opções de aulas disponíveis em horários especiais do início ao fim da noite: **18:00, 19:00 e 20:00**.</p>
+                <p>Confira nossas opções de aulas disponíveis em horários especiais do início ao fim da noite: <strong id="display-class-schedules">18:00 | 19:00 | 20:00</strong>.</p>
             </div>
             <div class="cards-grid">
                 <!-- Card 1: Futevôlei -->
@@ -125,7 +132,7 @@
                         <h3>Aulas de Futevôlei</h3>
                         <p>Domine o controle de bola, recepção de peito/ombro, passes de cabeça e ataques na rede com professores especialistas.</p>
                         <ul class="card-features">
-                            <li><i class="fa-solid fa-clock text-primary"></i> 18:00 | 19:00 | 20:00</li>
+                            <li><i class="fa-solid fa-clock text-primary"></i> <span class="display-schedules-futevolei">18:00 | 19:00 | 20:00</span></li>
                             <li><i class="fa-solid fa-check text-primary"></i> Para iniciantes e avançados</li>
                             <li><i class="fa-solid fa-check text-primary"></i> Alta queima calórica</li>
                         </ul>
@@ -145,13 +152,13 @@
                         <h3>Beach Tennis</h3>
                         <p>Esporte dinâmico, divertido e muito fácil de aprender. Melhore seus reflexos, agilidade e divirta-se jogando em dupla.</p>
                         <ul class="card-features">
-                            <li><i class="fa-solid fa-clock text-primary"></i> 18:00 | 19:00 | 20:00</li>
+                            <li><i class="fa-solid fa-clock text-primary"></i> <span class="display-schedules-beachtennis">18:00 | 19:00 | 20:00</span></li>
                             <li><i class="fa-solid fa-check text-primary"></i> Equipamento cedido no treino</li>
                             <li><i class="fa-solid fa-check text-primary"></i> Dinâmica rápida e estimulante</li>
                         </ul>
                         <div class="card-footer-pricing">
                             <span class="price-label">Mensalidade</span>
-                            <span class="price-value">Consulte-nos</span>
+                            <span class="price-value" id="display-beachtennis-price">Consulte-nos</span>
                         </div>
                         <button class="btn btn-gradient btn-block" onclick="openLeadModal('beachtennis', 'Aulas de Beach Tennis')">Reservar Raquete</button>
                     </div>
@@ -165,13 +172,13 @@
                         <h3>Treino Funcional</h3>
                         <p>Fortaleça articulações, ganhe condicionamento físico cardiovascular e tonifique os músculos com a resistência natural da areia.</p>
                         <ul class="card-features">
-                            <li><i class="fa-solid fa-clock text-primary"></i> 18:00 | 19:00 | 20:00</li>
+                            <li><i class="fa-solid fa-clock text-primary"></i> <span class="display-schedules-funcional">18:00 | 19:00 | 20:00</span></li>
                             <li><i class="fa-solid fa-check text-primary"></i> Excelente preparo muscular</li>
                             <li><i class="fa-solid fa-check text-primary"></i> Menor impacto nas articulações</li>
                         </ul>
                         <div class="card-footer-pricing">
                             <span class="price-label">Mensalidade</span>
-                            <span class="price-value">A partir de R$ 130</span>
+                            <span class="price-value" id="display-functional-price">A partir de R$ 130</span>
                         </div>
                         <button class="btn btn-primary btn-block" onclick="openLeadModal('funcional', 'Treino Funcional')">Começar Desafio</button>
                     </div>
@@ -241,13 +248,13 @@
                 </div>
                 <div class="about-content">
                     <span class="section-subtitle">Quem Somos</span>
-                    <h2>O Varandas Beach Club</h2>
+                    <h2>O <span id="display-business-name-about">Varandas</span> Beach Club</h2>
                     <p>O Varandas Beach Club traz a energia da praia direto para a sua rotina. Oferecemos um ambiente de alto padrão focado em saúde, prática de esportes na areia e convivência de qualidade.</p>
                     <p>Aqui você treina com orientação de qualidade, aluga quadras para jogos recreativos, consome bebidas geladas no local e ainda aproveita nosso espaço gourmet com churrasqueira para seus eventos familiares ou corporativos.</p>
                     
                     <div class="about-amenities">
-                        <div class="amenity-badge"><i class="fa-brands fa-instagram"></i> @varandasbeachclub</div>
-                        <div class="amenity-badge"><i class="fa-solid fa-map-location-dot"></i> Sinimbu, 785</div>
+                        <a href="https://www.instagram.com/varandasbeachclub" target="_blank" class="amenity-badge" id="display-instagram-link-about"><i class="fa-brands fa-instagram"></i> <span id="display-instagram-label-about">@varandasbeachclub</span></a>
+                        <div class="amenity-badge"><i class="fa-solid fa-map-location-dot"></i> <span id="display-address-about">Sinimbu, 785</span></div>
                         <div class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Estrutura Segura</div>
                         <div class="amenity-badge"><i class="fa-solid fa-beer-mug-empty"></i> Bar e Bebidas</div>
                     </div>
@@ -262,12 +269,12 @@
             <div class="footer-col-brand">
                 <a href="#" class="logo">
                     <i class="fa-solid fa-umbrella-beach"></i>
-                    <span>Varandas</span> Beach Club
+                    <span id="display-business-name-footer">Varandas</span> Beach Club
                 </a>
                 <p>Esporte de areia, bar, bebidas geladas e churrasco com a galera. Siga no Instagram para acompanhar nossos eventos.</p>
                 <div class="social-links">
-                    <a href="https://www.instagram.com/varandasbeachclub" target="_blank"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="https://www.instagram.com/varandasbeachclub" target="_blank" id="display-instagram-icon-footer"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" target="_blank" class="display-whatsapp-link-footer"><i class="fa-brands fa-whatsapp"></i></a>
                 </div>
             </div>
             <div class="footer-col-links">
@@ -282,14 +289,14 @@
             <div class="footer-col-contact">
                 <h4>Contato & Endereço</h4>
                 <ul>
-                    <li><i class="fa-solid fa-location-dot"></i> Estrada Visconde de Sinimbu, 785</li>
-                    <li><i class="fa-solid fa-envelope"></i> contato@varandasbeachclub.com.br</li>
-                    <li><i class="fa-brands fa-whatsapp"></i> (21) 97147-5005</li>
+                    <li><i class="fa-solid fa-location-dot"></i> <span id="display-address-footer">Estrada Visconde de Sinimbu, 785</span></li>
+                    <li><i class="fa-solid fa-envelope"></i> <span id="display-email-footer">contato@varandasbeachclub.com.br</span></li>
+                    <li><i class="fa-brands fa-whatsapp"></i> <span id="display-phone-footer">(21) 97147-5005</span></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom text-center">
-            <p>&copy; 2026 Varandas Beach Club. Todos os direitos reservados.</p>
+            <p>&copy; 2026 <span id="display-business-name-copyright">Varandas</span> Beach Club. Todos os direitos reservados.</p>
         </div>
     </footer>
 

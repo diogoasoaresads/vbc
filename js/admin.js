@@ -600,14 +600,23 @@ async function loadSettingsInputs() {
     try {
         const settings = await Storage.getSettings();
 
-        // WhatsApp Form
-        document.getElementById('config-wa-number').value = settings.whatsappNumber;
-        document.getElementById('config-wa-message').value = settings.whatsappMessage;
+        // Contato e Localização Form
+        document.getElementById('config-wa-number').value = settings.whatsappNumber || '';
+        document.getElementById('config-wa-message').value = settings.whatsappMessage || '';
+        document.getElementById('config-business-address').value = settings.businessAddress || '';
+        document.getElementById('config-instagram-url').value = settings.instagramUrl || '';
+        document.getElementById('config-business-email').value = settings.businessEmail || '';
 
-        // General Config Form
-        document.getElementById('config-business-name').value = settings.businessName || 'Varandas Beach Club';
-        document.getElementById('config-class-price').value = settings.classPrice || 'R$ 150/mês';
-        document.getElementById('config-court-price').value = settings.courtPrice || 'R$ 80/hora';
+        // Preços, Horários e Avisos Form
+        document.getElementById('config-business-name').value = settings.businessName || '';
+        document.getElementById('config-class-schedules').value = settings.classSchedules || '';
+        document.getElementById('config-business-hours').value = settings.businessHours || '';
+        document.getElementById('config-class-price').value = settings.classPrice || '';
+        document.getElementById('config-beachtennis-price').value = settings.beachTennisPrice || '';
+        document.getElementById('config-functional-price').value = settings.functionalPrice || '';
+        document.getElementById('config-court-price').value = settings.courtPrice || '';
+        document.getElementById('config-alert-active').value = settings.alertBarActive !== undefined ? settings.alertBarActive : 0;
+        document.getElementById('config-alert-text').value = settings.alertBarText || '';
     } catch (err) {
         console.error('Erro ao carregar configurações nas inputs:', err);
     }
@@ -625,11 +634,14 @@ function setupSettingsForms() {
                 
                 settings.whatsappNumber = document.getElementById('config-wa-number').value.trim();
                 settings.whatsappMessage = document.getElementById('config-wa-message').value;
+                settings.businessAddress = document.getElementById('config-business-address').value.trim();
+                settings.instagramUrl = document.getElementById('config-instagram-url').value.trim();
+                settings.businessEmail = document.getElementById('config-business-email').value.trim();
 
                 await Storage.saveSettings(settings);
-                alert('Configurações do WhatsApp salvas com sucesso!');
+                alert('Configurações de Contato salvas com sucesso!');
             } catch (err) {
-                alert('Erro ao salvar configurações do WhatsApp: ' + err.message);
+                alert('Erro ao salvar configurações de contato: ' + err.message);
             }
         });
     }
@@ -641,11 +653,17 @@ function setupSettingsForms() {
                 const settings = await Storage.getSettings();
 
                 settings.businessName = document.getElementById('config-business-name').value.trim();
+                settings.classSchedules = document.getElementById('config-class-schedules').value.trim();
+                settings.businessHours = document.getElementById('config-business-hours').value.trim();
                 settings.classPrice = document.getElementById('config-class-price').value.trim();
+                settings.beachTennisPrice = document.getElementById('config-beachtennis-price').value.trim();
+                settings.functionalPrice = document.getElementById('config-functional-price').value.trim();
                 settings.courtPrice = document.getElementById('config-court-price').value.trim();
+                settings.alertBarActive = parseInt(document.getElementById('config-alert-active').value);
+                settings.alertBarText = document.getElementById('config-alert-text').value.trim();
 
                 await Storage.saveSettings(settings);
-                alert('Configurações gerais salvas com sucesso! As alterações serão exibidas na Landing Page.');
+                alert('Configurações Gerais salvas com sucesso! As alterações já estão ativas no site.');
             } catch (err) {
                 alert('Erro ao salvar configurações gerais: ' + err.message);
             }

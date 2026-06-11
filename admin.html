@@ -251,10 +251,10 @@
                 <div id="tab-config-whatsapp" class="tab-content">
                     <div class="settings-grid">
                         
-                        <!-- Coluna 1: WhatsApp Config -->
+                        <!-- Coluna 1: Contato e Redes Sociais -->
                         <div class="settings-card glass-card">
-                            <h3><i class="fa-brands fa-whatsapp text-primary"></i> Configuração do WhatsApp</h3>
-                            <p class="card-subtitle">Gerencie o número principal que receberá os leads do site.</p>
+                            <h3><i class="fa-solid fa-address-book text-primary"></i> Contato & Localização</h3>
+                            <p class="card-subtitle">Gerencie os meios de comunicação e endereço exibidos no site.</p>
                             
                             <form id="whatsappConfigForm" class="settings-form">
                                 <div class="form-group">
@@ -263,25 +263,49 @@
                                         <i class="fa-brands fa-whatsapp"></i>
                                         <input type="text" id="config-wa-number" placeholder="Ex: 5521971475005" required>
                                     </div>
-                                    <small class="form-help">Insira o código do país (55 para Brasil), DDD e o número, sem espaços, traços ou parênteses.</small>
+                                    <small class="form-help">Apenas números (ex: 5521971475005). Sem espaços ou traços.</small>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="config-wa-message">Mensagem de Boas-vindas Padrão (Botão Flutuante)</label>
+                                    <label for="config-wa-message">Mensagem de Saudação (Botão Flutuante)</label>
                                     <div class="input-wrapper">
                                         <i class="fa-regular fa-message" style="top: 15px;"></i>
-                                        <textarea id="config-wa-message" rows="4" placeholder="Mensagem enviada quando o usuário clica no botão do WhatsApp" required style="padding-left: 45px;"></textarea>
+                                        <textarea id="config-wa-message" rows="3" required style="padding-left: 45px;"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-business-address">Endereço Completo</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-map-location-dot"></i>
+                                        <input type="text" id="config-business-address" placeholder="Ex: Estrada Visconde de Sinimbu, 785" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-instagram-url">URL do Instagram</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-brands fa-instagram"></i>
+                                        <input type="url" id="config-instagram-url" placeholder="Ex: https://www.instagram.com/varandasbeachclub" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-business-email">E-mail de Contato</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-regular fa-envelope"></i>
+                                        <input type="email" id="config-business-email" placeholder="Ex: contato@varandasbeachclub.com.br" required>
                                     </div>
                                 </div>
                                 
-                                <button type="submit" class="btn btn-primary">Salvar Configurações WhatsApp</button>
+                                <button type="submit" class="btn btn-primary">Salvar Informações de Contato</button>
                             </form>
                         </div>
 
-                        <!-- Coluna 2: Preços e Textos -->
+                        <!-- Coluna 2: Preços, Horários e Alertas -->
                         <div class="settings-card glass-card">
-                            <h3><i class="fa-solid fa-sliders text-secondary"></i> Configurações Gerais do Club</h3>
-                            <p class="card-subtitle">Gerencie textos e preços exibidos na Landing Page.</p>
+                            <h3><i class="fa-solid fa-sliders text-secondary"></i> Preços, Horários & Avisos</h3>
+                            <p class="card-subtitle">Gerencie preços, programações e avisos da Landing Page.</p>
                             
                             <form id="generalConfigForm" class="settings-form">
                                 <div class="form-group">
@@ -291,20 +315,74 @@
                                         <input type="text" id="config-business-name" required>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
-                                    <label for="config-class-price">Preço das Aulas (Exibido nos cards)</label>
+                                    <label for="config-class-schedules">Horários das Aulas (Texto explicativo)</label>
                                     <div class="input-wrapper">
-                                        <i class="fa-solid fa-dollar-sign"></i>
-                                        <input type="text" id="config-class-price" required>
+                                        <i class="fa-regular fa-clock"></i>
+                                        <input type="text" id="config-class-schedules" placeholder="Ex: 18:00 | 19:00 | 20:00" required>
                                     </div>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="config-court-price">Preço do Aluguel de Quadra (por hora)</label>
+                                    <label for="config-business-hours">Horário de Funcionamento Geral</label>
                                     <div class="input-wrapper">
-                                        <i class="fa-solid fa-dollar-sign"></i>
-                                        <input type="text" id="config-court-price" required>
+                                        <i class="fa-solid fa-business-time"></i>
+                                        <input type="text" id="config-business-hours" placeholder="Ex: 18h às 23h" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="settings-row-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div class="form-group">
+                                        <label for="config-class-price">Mensalidade Futevôlei</label>
+                                        <div class="input-wrapper">
+                                            <i class="fa-solid fa-dollar-sign"></i>
+                                            <input type="text" id="config-class-price" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="config-beachtennis-price">Mensalidade Beach Tennis</label>
+                                        <div class="input-wrapper">
+                                            <i class="fa-solid fa-dollar-sign"></i>
+                                            <input type="text" id="config-beachtennis-price" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-row-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div class="form-group">
+                                        <label for="config-functional-price">Mensalidade Funcional</label>
+                                        <div class="input-wrapper">
+                                            <i class="fa-solid fa-dollar-sign"></i>
+                                            <input type="text" id="config-functional-price" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="config-court-price">Aluguel da Quadra (Hora)</label>
+                                        <div class="input-wrapper">
+                                            <i class="fa-solid fa-dollar-sign"></i>
+                                            <input type="text" id="config-court-price" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Barra de Alertas / Promoções -->
+                                <div class="form-group border-top-blue" style="border-top: 1px solid var(--glass-border); padding-top: 15px; margin-top: 15px;">
+                                    <label for="config-alert-active">Barra de Alerta do Topo (Comunicado)</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-bullhorn"></i>
+                                        <select id="config-alert-active" required>
+                                            <option value="1">Barra Ativa (Exibir no site)</option>
+                                            <option value="0">Barra Inativa (Ocultar)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-alert-text">Texto do Comunicado</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-regular fa-comment-dots"></i>
+                                        <input type="text" id="config-alert-text" placeholder="Ex: 🚨 Matrículas abertas para as novas turmas!">
                                     </div>
                                 </div>
                                 
