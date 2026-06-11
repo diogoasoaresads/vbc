@@ -67,6 +67,16 @@ async function initDb() {
             )
         `);
 
+        // Tabela de Sessões (Persistência)
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS sessions (
+                token TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                name TEXT NOT NULL,
+                expires INTEGER NOT NULL
+            )
+        `);
+
         // Tabela de Configurações - Recria com as novas colunas
         // Nota: Para migração limpa sem conflitos de colunas em desenvolvimento, 
         // recriamos a tabela caso ela não possua uma das novas colunas
@@ -181,35 +191,44 @@ async function initDb() {
 
 initDb();
 
-// --- SISTEMA DE SESSÃO EM MEMÓRIA ---
-const SESSIONS = {};
+// --- SISTEMA DE SESSÕES NO BANCO DE DADOS (PERSISTIDO) ---
 
-function cleanExpiredSessions() {
-    const now = Date.now();
-    for (const token in SESSIONS) {
-        if (SESSIONS[token].expires < now) {
-            delete SESSIONS[token];
-        }
+async function cleanExpiredSessions() {
+    try {
+        const now = Date.now();
+        await dbRun('DELETE FROM sessions WHERE expires < ?', [now]);
+    } catch (err) {
+        console.error('Erro ao limpar sessões expiradas no SQLite:', err);
     }
 }
 setInterval(cleanExpiredSessions, 60 * 60 * 1000); // Executa de hora em hora
 
 // Middleware de Autenticação
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Não autorizado. Token ausente.' });
     }
 
     const token = authHeader.split(' ')[1];
-    const session = SESSIONS[token];
+    
+    try {
+        const session = await dbGet('SELECT username, name, expires FROM sessions WHERE token = ?', [token]);
 
-    if (!session || session.expires < Date.now()) {
-        return res.status(401).json({ error: 'Sessão expirada ou inválida.' });
+        if (!session || session.expires < Date.now()) {
+            if (session) {
+                // Remove a sessão expirada se encontrada
+                await dbRun('DELETE FROM sessions WHERE token = ?', [token]).catch(() => {});
+            }
+            return res.status(401).json({ error: 'Sessão expirada ou inválida.' });
+        }
+
+        req.user = { username: session.username, name: session.name };
+        next();
+    } catch (err) {
+        console.error('Erro na validação de sessão no SQLite:', err);
+        return res.status(500).json({ error: 'Erro interno na validação de sessão.' });
     }
-
-    req.user = session.user;
-    next();
 }
 
 // --- ROTAS DA API ---
@@ -230,10 +249,14 @@ app.post('/api/auth/login', async (req, res) => {
 
         // Gera token simples
         const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        SESSIONS[token] = {
-            user: { username: user.username, name: user.name },
-            expires: Date.now() + 24 * 60 * 60 * 1000 // 24 horas
-        };
+        const expires = Date.now() + 24 * 60 * 60 * 1000; // 24 horas
+
+        await dbRun('INSERT INTO sessions (token, username, name, expires) VALUES (?, ?, ?, ?)', [
+            token,
+            user.username,
+            user.name,
+            expires
+        ]);
 
         res.json({ token, user: { username: user.username, name: user.name } });
     } catch (err) {
@@ -242,11 +265,15 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-app.post('/api/auth/logout', (req, res) => {
+app.post('/api/auth/logout', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.split(' ')[1];
-        delete SESSIONS[token];
+        try {
+            await dbRun('DELETE FROM sessions WHERE token = ?', [token]);
+        } catch (err) {
+            console.error('Erro ao deletar sessão no banco:', err);
+        }
     }
     res.json({ success: true });
 });
