@@ -617,6 +617,20 @@ async function loadSettingsInputs() {
         document.getElementById('config-court-price').value = settings.courtPrice || '';
         document.getElementById('config-alert-active').value = settings.alertBarActive !== undefined ? settings.alertBarActive : 0;
         document.getElementById('config-alert-text').value = settings.alertBarText || '';
+
+        // Aparência e Textos do Site Form
+        document.getElementById('config-hero-badge').value = settings.heroBadge || '';
+        document.getElementById('config-hero-title').value = settings.heroTitle || '';
+        document.getElementById('config-hero-desc').value = settings.heroDescription || '';
+        document.getElementById('config-about-title').value = settings.aboutTitle || '';
+        document.getElementById('config-about-text1').value = settings.aboutText1 || '';
+        document.getElementById('config-about-text2').value = settings.aboutText2 || '';
+
+        // SEO & Extras Form
+        document.getElementById('config-seo-title').value = settings.seoTitle || '';
+        document.getElementById('config-seo-desc').value = settings.seoDescription || '';
+        document.getElementById('config-churrasqueira-price').value = settings.churrasqueiraPrice || '';
+        document.getElementById('config-google-maps').value = settings.googleMapsLink || '';
     } catch (err) {
         console.error('Erro ao carregar configurações nas inputs:', err);
     }
@@ -625,6 +639,8 @@ async function loadSettingsInputs() {
 function setupSettingsForms() {
     const whatsappConfigForm = document.getElementById('whatsappConfigForm');
     const generalConfigForm = document.getElementById('generalConfigForm');
+    const siteTextsConfigForm = document.getElementById('siteTextsConfigForm');
+    const seoLazerConfigForm = document.getElementById('seoLazerConfigForm');
 
     if (whatsappConfigForm) {
         whatsappConfigForm.addEventListener('submit', async (e) => {
@@ -666,6 +682,46 @@ function setupSettingsForms() {
                 alert('Configurações Gerais salvas com sucesso! As alterações já estão ativas no site.');
             } catch (err) {
                 alert('Erro ao salvar configurações gerais: ' + err.message);
+            }
+        });
+    }
+
+    if (siteTextsConfigForm) {
+        siteTextsConfigForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const settings = await Storage.getSettings();
+
+                settings.heroBadge = document.getElementById('config-hero-badge').value.trim();
+                settings.heroTitle = document.getElementById('config-hero-title').value.trim();
+                settings.heroDescription = document.getElementById('config-hero-desc').value.trim();
+                settings.aboutTitle = document.getElementById('config-about-title').value.trim();
+                settings.aboutText1 = document.getElementById('config-about-text1').value.trim();
+                settings.aboutText2 = document.getElementById('config-about-text2').value.trim();
+
+                await Storage.saveSettings(settings);
+                alert('Textos do site salvos com sucesso! As alterações já estão ativas na página inicial.');
+            } catch (err) {
+                alert('Erro ao salvar textos do site: ' + err.message);
+            }
+        });
+    }
+
+    if (seoLazerConfigForm) {
+        seoLazerConfigForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const settings = await Storage.getSettings();
+
+                settings.seoTitle = document.getElementById('config-seo-title').value.trim();
+                settings.seoDescription = document.getElementById('config-seo-desc').value.trim();
+                settings.churrasqueiraPrice = document.getElementById('config-churrasqueira-price').value.trim();
+                settings.googleMapsLink = document.getElementById('config-google-maps').value.trim();
+
+                await Storage.saveSettings(settings);
+                alert('SEO e informações extras salvas com sucesso! As alterações já estão ativas.');
+            } catch (err) {
+                alert('Erro ao salvar configurações de SEO e extras: ' + err.message);
             }
         });
     }

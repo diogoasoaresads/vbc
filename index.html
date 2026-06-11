@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Varandas Beach Club | Futevôlei, Beach Tennis, Funcional e Aluguel de Quadras</title>
-    <meta name="description" content="Venha treinar e se divertir no Varandas Beach Club! Oferecemos aulas de Futevôlei, Beach Tennis, Funcional e aluguel de quadras de areia com churrasqueira no local.">
+    <title id="display-seo-title">Varandas Beach Club | Futevôlei, Beach Tennis, Funcional e Aluguel de Quadras</title>
+    <meta name="description" id="display-seo-description" content="Venha treinar e se divertir no Varandas Beach Club! Oferecemos aulas de Futevôlei, Beach Tennis, Funcional e aluguel de quadras de areia com churrasqueira no local.">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,9 +47,9 @@
     <section id="inicio" class="hero-section" style="background: linear-gradient(135deg, rgba(10, 25, 47, 0.85) 0%, rgba(26, 54, 93, 0.8) 100%), url('images/hero_bg.png') no-repeat center center/cover;">
         <div class="container hero-container">
             <div class="hero-content">
-                <span class="badge">Pé na areia, saúde no corpo!</span>
-                <h1>O seu momento de esporte e lazer está no <span id="display-business-name-hero">Varandas</span></h1>
-                <p>Estrutura de ponta com quadras de areia premium para Futevôlei, Beach Tennis e Treinamento Funcional. Treine com quem entende ou curta com os amigos com vestiário e bar completo.</p>
+                <span class="badge" id="display-hero-badge">Pé na areia, saúde no corpo!</span>
+                <h1 id="display-hero-title">O seu momento de esporte e lazer está no <span id="display-business-name-hero">Varandas</span></h1>
+                <p id="display-hero-description">Estrutura de ponta com quadras de areia premium para Futevôlei, Beach Tennis e Treinamento Funcional. Treine com quem entende ou curta com os amigos com vestiário e bar completo.</p>
                 <div class="hero-actions">
                     <a href="#aulas" class="btn btn-primary">Conhecer Aulas</a>
                     <a href="#aluguel" class="btn btn-secondary">Alugar Quadra</a>
@@ -227,6 +227,10 @@
                             <span class="price-label">Quadras de Areia</span>
                             <h4 id="display-court-price">R$ 80/hora</h4>
                         </div>
+                        <div>
+                            <span class="price-label">Churrasqueira</span>
+                            <h4 id="display-churrasqueira-price">Consulte-nos</h4>
+                        </div>
                         <button class="btn btn-gradient" onclick="openLeadModal('aluguel', 'Reserva de Quadra + Churrasqueira')">Reservar Quadra</button>
                     </div>
                 </div>
@@ -248,13 +252,13 @@
                 </div>
                 <div class="about-content">
                     <span class="section-subtitle">Quem Somos</span>
-                    <h2>O <span id="display-business-name-about">Varandas</span> Beach Club</h2>
-                    <p>O Varandas Beach Club traz a energia da praia direto para a sua rotina. Oferecemos um ambiente de alto padrão focado em saúde, prática de esportes na areia e convivência de qualidade.</p>
-                    <p>Aqui você treina com orientação de qualidade, aluga quadras para jogos recreativos, consome bebidas geladas no local e ainda aproveita nosso espaço gourmet com churrasqueira para seus eventos familiares ou corporativos.</p>
+                    <h2 id="display-about-title">O <span id="display-business-name-about">Varandas</span> Beach Club</h2>
+                    <p id="display-about-text-1">O Varandas Beach Club traz a energia da praia direto para a sua rotina. Oferecemos um ambiente de alto padrão focado em saúde, prática de esportes na areia e convivência de qualidade.</p>
+                    <p id="display-about-text-2">Aqui você treina com orientação de qualidade, aluga quadras para jogos recreativos, consome bebidas geladas no local e ainda aproveita nosso espaço gourmet com churrasqueira para seus eventos familiares ou corporativos.</p>
                     
                     <div class="about-amenities">
                         <a href="https://www.instagram.com/varandasbeachclub" target="_blank" class="amenity-badge" id="display-instagram-link-about"><i class="fa-brands fa-instagram"></i> <span id="display-instagram-label-about">@varandasbeachclub</span></a>
-                        <div class="amenity-badge"><i class="fa-solid fa-map-location-dot"></i> <span id="display-address-about">Sinimbu, 785</span></div>
+                        <a href="https://maps.google.com/?q=Estrada+Visconde+de+Sinimbu+785" target="_blank" class="amenity-badge" id="display-address-link-about"><i class="fa-solid fa-map-location-dot"></i> <span id="display-address-about">Sinimbu, 785</span></a>
                         <div class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Estrutura Segura</div>
                         <div class="amenity-badge"><i class="fa-solid fa-beer-mug-empty"></i> Bar e Bebidas</div>
                     </div>
@@ -289,7 +293,7 @@
             <div class="footer-col-contact">
                 <h4>Contato & Endereço</h4>
                 <ul>
-                    <li><i class="fa-solid fa-location-dot"></i> <span id="display-address-footer">Estrada Visconde de Sinimbu, 785</span></li>
+                    <li><a href="https://maps.google.com/?q=Estrada+Visconde+de+Sinimbu+785" target="_blank" id="display-address-link-footer" style="color: inherit; text-decoration: none;"><i class="fa-solid fa-location-dot"></i> <span id="display-address-footer">Estrada Visconde de Sinimbu, 785</span></a></li>
                     <li><i class="fa-solid fa-envelope"></i> <span id="display-email-footer">contato@varandasbeachclub.com.br</span></li>
                     <li><i class="fa-brands fa-whatsapp"></i> <span id="display-phone-footer">(21) 97147-5005</span></li>
                 </ul>

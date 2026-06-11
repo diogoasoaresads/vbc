@@ -23,6 +23,17 @@ async function loadDynamicSettings() {
     try {
         const settings = await Storage.getSettings();
 
+        // 0. SEO & Metadados
+        const seoTitleEl = document.getElementById('display-seo-title');
+        const seoDescEl = document.getElementById('display-seo-description');
+        if (settings.seoTitle) {
+            document.title = settings.seoTitle;
+            if (seoTitleEl) seoTitleEl.textContent = settings.seoTitle;
+        }
+        if (settings.seoDescription && seoDescEl) {
+            seoDescEl.setAttribute('content', settings.seoDescription);
+        }
+
         // 1. Identidade do Negócio
         const nameLogo = document.getElementById('display-business-name-logo');
         const nameHero = document.getElementById('display-business-name-hero');
@@ -36,26 +47,75 @@ async function loadDynamicSettings() {
         if (nameFooter && settings.businessName) nameFooter.textContent = settings.businessName.split(' ')[0] || settings.businessName;
         if (nameCopyright && settings.businessName) nameCopyright.textContent = settings.businessName.split(' ')[0] || settings.businessName;
 
+        // 1.5. Textos Gerais e Aparência do Site (Hero e Sobre Nós)
+        const heroBadge = document.getElementById('display-hero-badge');
+        const heroTitle = document.getElementById('display-hero-title');
+        const heroDesc = document.getElementById('display-hero-description');
+        const aboutTitle = document.getElementById('display-about-title');
+        const aboutText1 = document.getElementById('display-about-text-1');
+        const aboutText2 = document.getElementById('display-about-text-2');
+
+        if (heroBadge && settings.heroBadge) heroBadge.textContent = settings.heroBadge;
+        
+        if (heroTitle && settings.heroTitle) {
+            const clubName = settings.businessName || 'Varandas';
+            const shortClubName = clubName.split(' ')[0];
+            
+            if (settings.heroTitle.includes(shortClubName)) {
+                const parts = settings.heroTitle.split(shortClubName);
+                heroTitle.innerHTML = `${parts[0]}<span id="display-business-name-hero">${shortClubName}</span>${parts[1] || ''}`;
+            } else {
+                heroTitle.textContent = settings.heroTitle;
+            }
+        }
+        
+        if (heroDesc && settings.heroDescription) heroDesc.textContent = settings.heroDescription;
+        
+        if (aboutTitle && settings.aboutTitle) {
+            const clubName = settings.businessName || 'Varandas';
+            const shortClubName = clubName.split(' ')[0];
+            
+            if (settings.aboutTitle.includes(shortClubName)) {
+                const parts = settings.aboutTitle.split(shortClubName);
+                aboutTitle.innerHTML = `${parts[0]}<span id="display-business-name-about">${shortClubName}</span>${parts[1] || ''}`;
+            } else {
+                aboutTitle.textContent = settings.aboutTitle;
+            }
+        }
+        
+        if (aboutText1 && settings.aboutText1) aboutText1.textContent = settings.aboutText1;
+        if (aboutText2 && settings.aboutText2) aboutText2.textContent = settings.aboutText2;
+
         // 2. Preços
         const displayClassPrice = document.getElementById('display-class-price');
         const displayCourtPrice = document.getElementById('display-court-price');
         const displayBeachTennisPrice = document.getElementById('display-beachtennis-price');
         const displayFunctionalPrice = document.getElementById('display-functional-price');
+        const displayChurrasqueiraPrice = document.getElementById('display-churrasqueira-price');
         
         if (displayClassPrice && settings.classPrice) displayClassPrice.textContent = settings.classPrice;
         if (displayCourtPrice && settings.courtPrice) displayCourtPrice.textContent = settings.courtPrice;
         if (displayBeachTennisPrice && settings.beachTennisPrice) displayBeachTennisPrice.textContent = settings.beachTennisPrice;
         if (displayFunctionalPrice && settings.functionalPrice) displayFunctionalPrice.textContent = settings.functionalPrice;
+        if (displayChurrasqueiraPrice && settings.churrasqueiraPrice) displayChurrasqueiraPrice.textContent = settings.churrasqueiraPrice;
 
-        // 3. Contatos
+        // 3. Contatos e Maps
         const displayAddressAbout = document.getElementById('display-address-about');
         const displayAddressFooter = document.getElementById('display-address-footer');
         const displayEmailFooter = document.getElementById('display-email-footer');
         const displayPhoneFooter = document.getElementById('display-phone-footer');
+        const addressLinkAbout = document.getElementById('display-address-link-about');
+        const addressLinkFooter = document.getElementById('display-address-link-footer');
 
         if (displayAddressAbout && settings.businessAddress) displayAddressAbout.textContent = settings.businessAddress;
         if (displayAddressFooter && settings.businessAddress) displayAddressFooter.textContent = settings.businessAddress;
         if (displayEmailFooter && settings.businessEmail) displayEmailFooter.textContent = settings.businessEmail;
+        
+        if (settings.googleMapsLink) {
+            if (addressLinkAbout) addressLinkAbout.href = settings.googleMapsLink;
+            if (addressLinkFooter) addressLinkFooter.href = settings.googleMapsLink;
+        }
+
         if (displayPhoneFooter && settings.whatsappNumber) {
             // Formata o número de telefone de forma legível para exibição ex: (21) 97147-5005
             let num = settings.whatsappNumber;

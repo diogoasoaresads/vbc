@@ -88,7 +88,17 @@ async function initDb() {
                 beachTennisPrice TEXT NOT NULL,
                 functionalPrice TEXT NOT NULL,
                 alertBarActive INTEGER DEFAULT 0,
-                alertBarText TEXT
+                alertBarText TEXT,
+                heroBadge TEXT,
+                heroTitle TEXT,
+                heroDescription TEXT,
+                aboutTitle TEXT,
+                aboutText1 TEXT,
+                aboutText2 TEXT,
+                googleMapsLink TEXT,
+                seoTitle TEXT,
+                seoDescription TEXT,
+                churrasqueiraPrice TEXT
             )
         `);
 
@@ -120,9 +130,11 @@ async function initDb() {
                 INSERT INTO settings (
                     id, whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice,
                     businessAddress, instagramUrl, businessEmail, classSchedules, businessHours,
-                    beachTennisPrice, functionalPrice, alertBarActive, alertBarText
+                    beachTennisPrice, functionalPrice, alertBarActive, alertBarText,
+                    heroBadge, heroTitle, heroDescription, aboutTitle, aboutText1, aboutText2,
+                    googleMapsLink, seoTitle, seoDescription, churrasqueiraPrice
                 )
-                VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `, [
                 '5521971475005',
                 'Olá! Vim pelo site do Varandas Beach Club e gostaria de informações sobre aulas/aluguel de quadra.',
@@ -137,7 +149,17 @@ async function initDb() {
                 'Consulte-nos',
                 'A partir de R$ 130',
                 1,
-                '🚨 Matrículas abertas para as novas turmas de Beach Tennis das 18h!'
+                '🚨 Matrículas abertas para as novas turmas de Beach Tennis das 18h!',
+                'Pé na areia, saúde no corpo!',
+                'O seu momento de esporte e lazer está no Varandas',
+                'Estrutura de ponta com quadras de areia premium para Futevôlei, Beach Tennis e Treinamento Funcional. Treine com quem entende ou curta com os amigos com vestiário e bar completo.',
+                'O Varandas Beach Club',
+                'O Varandas Beach Club traz a energia da praia direto para a sua rotina. Oferecemos um ambiente de alto padrão focado em saúde, prática de esportes na areia e convivência de qualidade.',
+                'Aqui você treina com orientação de qualidade, aluga quadras para jogos recreativos, consome bebidas geladas no local e ainda aproveita nosso espaço gourmet com churrasqueira para seus eventos familiares ou corporativos.',
+                'https://maps.google.com/?q=Estrada+Visconde+de+Sinimbu+785',
+                'Varandas Beach Club | Futevôlei, Beach Tennis, Funcional e Aluguel de Quadras',
+                'Venha treinar e se divertir no Varandas Beach Club! Oferecemos aulas de Futevôlei, Beach Tennis, Funcional e aluguel de quadras de areia com churrasqueira no local.',
+                'Consulte-nos'
             ]);
             console.log('Configurações padrão inseridas no SQLite.');
         }
@@ -323,7 +345,9 @@ app.get('/api/settings', async (req, res) => {
             SELECT 
                 whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice,
                 businessAddress, instagramUrl, businessEmail, classSchedules, businessHours,
-                beachTennisPrice, functionalPrice, alertBarActive, alertBarText
+                beachTennisPrice, functionalPrice, alertBarActive, alertBarText,
+                heroBadge, heroTitle, heroDescription, aboutTitle, aboutText1, aboutText2,
+                googleMapsLink, seoTitle, seoDescription, churrasqueiraPrice
             FROM settings 
             WHERE id = 1
         `);
@@ -338,7 +362,9 @@ app.put('/api/settings', requireAuth, async (req, res) => {
     const { 
         whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice,
         businessAddress, instagramUrl, businessEmail, classSchedules, businessHours,
-        beachTennisPrice, functionalPrice, alertBarActive, alertBarText
+        beachTennisPrice, functionalPrice, alertBarActive, alertBarText,
+        heroBadge, heroTitle, heroDescription, aboutTitle, aboutText1, aboutText2,
+        googleMapsLink, seoTitle, seoDescription, churrasqueiraPrice
     } = req.body;
     
     try {
@@ -348,7 +374,9 @@ app.put('/api/settings', requireAuth, async (req, res) => {
             UPDATE settings
             SET whatsappNumber = ?, whatsappMessage = ?, businessName = ?, classPrice = ?, courtPrice = ?,
                 businessAddress = ?, instagramUrl = ?, businessEmail = ?, classSchedules = ?, businessHours = ?,
-                beachTennisPrice = ?, functionalPrice = ?, alertBarActive = ?, alertBarText = ?
+                beachTennisPrice = ?, functionalPrice = ?, alertBarActive = ?, alertBarText = ?,
+                heroBadge = ?, heroTitle = ?, heroDescription = ?, aboutTitle = ?, aboutText1 = ?, aboutText2 = ?,
+                googleMapsLink = ?, seoTitle = ?, seoDescription = ?, churrasqueiraPrice = ?
             WHERE id = 1
         `, [
             whatsappNumber !== undefined ? whatsappNumber : current.whatsappNumber,
@@ -364,14 +392,26 @@ app.put('/api/settings', requireAuth, async (req, res) => {
             beachTennisPrice !== undefined ? beachTennisPrice : current.beachTennisPrice,
             functionalPrice !== undefined ? functionalPrice : current.functionalPrice,
             alertBarActive !== undefined ? parseInt(alertBarActive) : current.alertBarActive,
-            alertBarText !== undefined ? alertBarText : current.alertBarText
+            alertBarText !== undefined ? alertBarText : current.alertBarText,
+            heroBadge !== undefined ? heroBadge : current.heroBadge,
+            heroTitle !== undefined ? heroTitle : current.heroTitle,
+            heroDescription !== undefined ? heroDescription : current.heroDescription,
+            aboutTitle !== undefined ? aboutTitle : current.aboutTitle,
+            aboutText1 !== undefined ? aboutText1 : current.aboutText1,
+            aboutText2 !== undefined ? aboutText2 : current.aboutText2,
+            googleMapsLink !== undefined ? googleMapsLink : current.googleMapsLink,
+            seoTitle !== undefined ? seoTitle : current.seoTitle,
+            seoDescription !== undefined ? seoDescription : current.seoDescription,
+            churrasqueiraPrice !== undefined ? churrasqueiraPrice : current.churrasqueiraPrice
         ]);
 
         const updated = await dbGet(`
             SELECT 
                 whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice,
                 businessAddress, instagramUrl, businessEmail, classSchedules, businessHours,
-                beachTennisPrice, functionalPrice, alertBarActive, alertBarText
+                beachTennisPrice, functionalPrice, alertBarActive, alertBarText,
+                heroBadge, heroTitle, heroDescription, aboutTitle, aboutText1, aboutText2,
+                googleMapsLink, seoTitle, seoDescription, churrasqueiraPrice
             FROM settings 
             WHERE id = 1
         `);

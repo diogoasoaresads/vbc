@@ -389,6 +389,108 @@
                                 <button type="submit" class="btn btn-secondary">Salvar Configurações Gerais</button>
                             </form>
                         </div>
+
+                        <!-- Coluna 3: Textos & Aparência do Site -->
+                        <div class="settings-card glass-card">
+                            <h3><i class="fa-solid fa-font text-primary"></i> Aparência & Textos do Site</h3>
+                            <p class="card-subtitle">Personalize os principais títulos e descrições do site.</p>
+                            
+                            <form id="siteTextsConfigForm" class="settings-form">
+                                <div class="form-group">
+                                    <label for="config-hero-badge">Slogan da Hero (Badge superior)</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-tags"></i>
+                                        <input type="text" id="config-hero-badge" placeholder="Ex: Pé na areia, saúde no corpo!" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-hero-title">Título Principal (Hero)</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-heading"></i>
+                                        <input type="text" id="config-hero-title" placeholder="Ex: O seu momento de esporte e lazer está no Varandas" required>
+                                    </div>
+                                    <small class="form-help">Nota: A palavra "Varandas" receberá destaque visual no site.</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-hero-desc">Descrição Principal (Hero)</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-regular fa-message" style="top: 15px;"></i>
+                                        <textarea id="config-hero-desc" rows="3" required style="padding-left: 45px;"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-about-title">Título do "Sobre Nós"</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-heading"></i>
+                                        <input type="text" id="config-about-title" placeholder="Ex: O Varandas Beach Club" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-about-text1">Parágrafo 1 do "Sobre Nós"</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-regular fa-message" style="top: 15px;"></i>
+                                        <textarea id="config-about-text1" rows="3" required style="padding-left: 45px;"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-about-text2">Parágrafo 2 do "Sobre Nós"</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-regular fa-message" style="top: 15px;"></i>
+                                        <textarea id="config-about-text2" rows="3" required style="padding-left: 45px;"></textarea>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Salvar Textos do Site</button>
+                            </form>
+                        </div>
+
+                        <!-- Coluna 4: SEO, Lazer & Mapas -->
+                        <div class="settings-card glass-card">
+                            <h3><i class="fa-solid fa-magnifying-glass text-secondary"></i> SEO & Informações Extras</h3>
+                            <p class="card-subtitle">Configure a otimização de busca (Google), lazer e localização.</p>
+                            
+                            <form id="seoLazerConfigForm" class="settings-form">
+                                <div class="form-group">
+                                    <label for="config-seo-title">Título SEO (Título da Aba)</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-window-maximize"></i>
+                                        <input type="text" id="config-seo-title" placeholder="Ex: Varandas Beach Club | Futevôlei, Beach Tennis..." required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-seo-desc">Descrição SEO (Meta Description)</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-regular fa-comment-dots" style="top: 15px;"></i>
+                                        <textarea id="config-seo-desc" rows="3" required style="padding-left: 45px;" placeholder="Digite o resumo para o Google..."></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-churrasqueira-price">Preço/Taxa Churrasqueira</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-fire-burner"></i>
+                                        <input type="text" id="config-churrasqueira-price" placeholder="Ex: Consulte-nos ou R$ 100/reserva" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="config-google-maps">Link de Rota do Google Maps</label>
+                                    <div class="input-wrapper">
+                                        <i class="fa-solid fa-map-location-dot"></i>
+                                        <input type="url" id="config-google-maps" placeholder="Ex: https://maps.google.com/..." required>
+                                    </div>
+                                    <small class="form-help">Link de compartilhamento para abrir a rota no GPS do usuário.</small>
+                                </div>
+
+                                <button type="submit" class="btn btn-secondary">Salvar SEO & Extras</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
