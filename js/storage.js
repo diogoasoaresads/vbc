@@ -23,6 +23,14 @@ function getHeaders() {
 // Auxiliar para lidar com respostas de erro
 async function handleResponse(response) {
     if (!response.ok) {
+        if (response.status === 401) {
+            // Limpa as credenciais locais
+            localStorage.removeItem(STORAGE_KEYS.TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+            // Recarrega a página para exibir a tela de login imediatamente
+            window.location.reload();
+            return new Promise(() => {}); // Retorna uma promise pendente para evitar erros subsequentes no código chamador antes do reload
+        }
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.error || 'Ocorreu um erro na requisição do servidor.');
     }
