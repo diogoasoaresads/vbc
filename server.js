@@ -116,11 +116,21 @@ async function initDb() {
             )
         `);
 
-        // Cria o usuário padrão caso o banco esteja vazio
-        const adminUser = await dbGet('SELECT * FROM users WHERE username = ?', ['admin']);
+        // Cria o usuário padrão ou o especificado pelas variáveis de ambiente da VPS/Easypanel
+        const envUsername = process.env.ADMIN_USERNAME || 'admin';
+        const envPassword = process.env.ADMIN_PASSWORD || 'admin123';
+        const envName = process.env.ADMIN_NAME || 'Administrador Principal';
+
+        const adminUser = await dbGet('SELECT * FROM users WHERE LOWER(username) = ?', [envUsername.toLowerCase()]);
         if (!adminUser) {
-            await dbRun('INSERT INTO users (username, password, name) VALUES (?, ?, ?)', ['admin', 'admin123', 'Administrador Principal']);
-            console.log('Usuário admin padrão inserido no SQLite.');
+            await dbRun('INSERT INTO users (username, password, name) VALUES (?, ?, ?)', [envUsername, envPassword, envName]);
+            console.log(`Usuário administrador '${envUsername}' cadastrado no SQLite.`);
+        } else {
+            // Se o usuário já existe mas a senha da variável de ambiente foi alterada na VPS, atualiza a senha no banco
+            if (process.env.ADMIN_PASSWORD && adminUser.password !== process.env.ADMIN_PASSWORD) {
+                await dbRun('UPDATE users SET password = ? WHERE LOWER(username) = ?', [process.env.ADMIN_PASSWORD, envUsername.toLowerCase()]);
+                console.log(`Senha do administrador '${envUsername}' atualizada via variável de ambiente.`);
+            }
         }
 
         // Cria as configurações padrão se não existirem
