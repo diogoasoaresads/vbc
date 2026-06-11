@@ -1,64 +1,127 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_FILE = path.join(__dirname, 'data', 'database.json');
+const DB_FILE = path.join(__dirname, 'data', 'database.db');
 
 // Middleware para JSON
 app.use(express.json());
 
-// --- SISTEMA DE ARMAZENAMENTO (JSON FILE DB) ---
-const DEFAULT_DB = {
-    leads: [],
-    settings: {
-        whatsappNumber: '5521971475005',
-        whatsappMessage: 'Olá! Vim pelo site do Varandas Beach Club e gostaria de informações sobre aulas/aluguel de quadra.',
-        businessName: 'Varandas Beach Club',
-        classPrice: 'R$ 150/mês',
-        courtPrice: 'R$ 80/hora'
-    },
-    users: [
-        {
-            username: 'admin',
-            password: 'admin123',
-            name: 'Administrador Principal'
-        }
-    ]
+// --- SISTEMA DE ARMAZENAMENTO (SQLITE DATABASE) ---
+
+// Garante que a pasta 'data' existe
+const dataDir = path.dirname(DB_FILE);
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// Conexão com o Banco de Dados
+const db = new sqlite3.Database(DB_FILE, (err) => {
+    if (err) {
+        console.error('Erro ao abrir o banco de dados SQLite:', err);
+    } else {
+        console.log('Conectado ao banco de dados SQLite com sucesso.');
+    }
+});
+
+// Helpers para transformar métodos do SQLite em Promises
+const dbRun = (query, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.run(query, params, function(err) {
+            if (err) reject(err);
+            else resolve(this); // Retorna o contexto (inclui this.changes e this.lastID)
+        });
+    });
 };
 
-// Garante que a pasta 'data' existe e o arquivo 'database.json' também
-function initDb() {
-    const dataDir = path.dirname(DB_FILE);
-    if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-    }
-    if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2), 'utf-8');
-        console.log('Banco de dados JSON inicializado com sucesso.');
+const dbAll = (query, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.all(query, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+        });
+    });
+};
+
+const dbGet = (query, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.get(query, params, (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+        });
+    });
+};
+
+// Inicialização das tabelas e carga inicial de dados padrão
+async function initDb() {
+    try {
+        // Tabela de Usuários (Administradores)
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                password TEXT NOT NULL,
+                name TEXT NOT NULL
+            )
+        `);
+
+        // Tabela de Configurações (Garante apenas 1 linha com CHECK constraint)
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS settings (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                whatsappNumber TEXT NOT NULL,
+                whatsappMessage TEXT NOT NULL,
+                businessName TEXT NOT NULL,
+                classPrice TEXT NOT NULL,
+                courtPrice TEXT NOT NULL
+            )
+        `);
+
+        // Tabela de Leads
+        await dbRun(`
+            CREATE TABLE IF NOT EXISTS leads (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                email TEXT,
+                interest TEXT NOT NULL,
+                date TEXT NOT NULL,
+                status TEXT NOT NULL,
+                notes TEXT
+            )
+        `);
+
+        // Cria o usuário padrão caso o banco esteja vazio
+        const adminUser = await dbGet('SELECT * FROM users WHERE username = ?', ['admin']);
+        if (!adminUser) {
+            await dbRun('INSERT INTO users (username, password, name) VALUES (?, ?, ?)', ['admin', 'admin123', 'Administrador Principal']);
+            console.log('Usuário admin padrão inserido no SQLite.');
+        }
+
+        // Cria as configurações padrão se não existirem
+        const settingsRow = await dbGet('SELECT * FROM settings WHERE id = 1');
+        if (!settingsRow) {
+            await dbRun(`
+                INSERT INTO settings (id, whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice)
+                VALUES (1, ?, ?, ?, ?, ?)
+            `, [
+                '5521971475005',
+                'Olá! Vim pelo site do Varandas Beach Club e gostaria de informações sobre aulas/aluguel de quadra.',
+                'Varandas Beach Club',
+                'R$ 150/mês',
+                'R$ 80/hora'
+            ]);
+            console.log('Configurações padrão inseridas no SQLite.');
+        }
+
+    } catch (err) {
+        console.error('Erro ao inicializar tabelas do banco SQLite:', err);
     }
 }
 
 initDb();
-
-function readDb() {
-    try {
-        const data = fs.readFileSync(DB_FILE, 'utf-8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Erro ao ler banco de dados:', error);
-        return DEFAULT_DB;
-    }
-}
-
-function writeDb(data) {
-    try {
-        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
-    } catch (error) {
-        console.error('Erro ao gravar banco de dados:', error);
-    }
-}
 
 // --- SISTEMA DE SESSÃO EM MEMÓRIA ---
 const SESSIONS = {};
@@ -71,7 +134,7 @@ function cleanExpiredSessions() {
         }
     }
 }
-setInterval(cleanExpiredSessions, 60 * 60 * 1000); // Executa a cada hora
+setInterval(cleanExpiredSessions, 60 * 60 * 1000); // Executa de hora em hora
 
 // Middleware de Autenticação
 function requireAuth(req, res, next) {
@@ -94,27 +157,31 @@ function requireAuth(req, res, next) {
 // --- ROTAS DA API ---
 
 // 1. Autenticação (Login / Logout)
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({ error: 'Usuário e senha são obrigatórios.' });
     }
 
-    const db = readDb();
-    const user = db.users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+    try {
+        const user = await dbGet('SELECT * FROM users WHERE LOWER(username) = ? AND password = ?', [username.toLowerCase(), password]);
 
-    if (!user) {
-        return res.status(401).json({ error: 'Usuário ou senha incorretos.' });
+        if (!user) {
+            return res.status(401).json({ error: 'Usuário ou senha incorretos.' });
+        }
+
+        // Gera token simples
+        const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        SESSIONS[token] = {
+            user: { username: user.username, name: user.name },
+            expires: Date.now() + 24 * 60 * 60 * 1000 // 24 horas
+        };
+
+        res.json({ token, user: { username: user.username, name: user.name } });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao autenticar no servidor.' });
     }
-
-    // Gera um token simples
-    const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    SESSIONS[token] = {
-        user: { username: user.username, name: user.name },
-        expires: Date.now() + 24 * 60 * 60 * 1000 // Expira em 24h
-    };
-
-    res.json({ token, user: { username: user.username, name: user.name } });
 });
 
 app.post('/api/auth/logout', (req, res) => {
@@ -130,14 +197,13 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
     res.json({ user: req.user });
 });
 
-// 2. Leads (Público e Autenticado)
-app.post('/api/leads', (req, res) => {
+// 2. Leads
+app.post('/api/leads', async (req, res) => {
     const { name, phone, email, interest, notes } = req.body;
     if (!name || !phone || !interest) {
         return res.status(400).json({ error: 'Nome, WhatsApp e Interesse são obrigatórios.' });
     }
 
-    const db = readDb();
     const newLead = {
         id: Date.now().toString(),
         name,
@@ -149,18 +215,30 @@ app.post('/api/leads', (req, res) => {
         notes: notes || ''
     };
 
-    db.leads.push(newLead);
-    writeDb(db);
+    try {
+        await dbRun(`
+            INSERT INTO leads (id, name, phone, email, interest, date, status, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [newLead.id, newLead.name, newLead.phone, newLead.email, newLead.interest, newLead.date, newLead.status, newLead.notes]);
 
-    res.status(201).json(newLead);
+        res.status(201).json(newLead);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao salvar lead no banco de dados SQLite.' });
+    }
 });
 
-app.get('/api/leads', requireAuth, (req, res) => {
-    const db = readDb();
-    res.json(db.leads);
+app.get('/api/leads', requireAuth, async (req, res) => {
+    try {
+        const leads = await dbAll('SELECT * FROM leads');
+        res.json(leads);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao consultar leads no SQLite.' });
+    }
 });
 
-app.put('/api/leads/:id/status', requireAuth, (req, res) => {
+app.put('/api/leads/:id/status', requireAuth, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     
@@ -168,116 +246,137 @@ app.put('/api/leads/:id/status', requireAuth, (req, res) => {
         return res.status(400).json({ error: 'Status é obrigatório.' });
     }
 
-    const db = readDb();
-    const lead = db.leads.find(l => l.id === id);
-
-    if (!lead) {
-        return res.status(404).json({ error: 'Lead não encontrado.' });
+    try {
+        const result = await dbRun('UPDATE leads SET status = ? WHERE id = ?', [status, id]);
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Lead não encontrado.' });
+        }
+        const updatedLead = await dbGet('SELECT * FROM leads WHERE id = ?', [id]);
+        res.json(updatedLead);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao atualizar status do lead no SQLite.' });
     }
-
-    lead.status = status;
-    writeDb(db);
-    res.json(lead);
 });
 
-app.put('/api/leads/:id/notes', requireAuth, (req, res) => {
+app.put('/api/leads/:id/notes', requireAuth, async (req, res) => {
     const { id } = req.params;
     const { notes } = req.body;
 
-    const db = readDb();
-    const lead = db.leads.find(l => l.id === id);
-
-    if (!lead) {
-        return res.status(404).json({ error: 'Lead não encontrado.' });
+    try {
+        const result = await dbRun('UPDATE leads SET notes = ? WHERE id = ?', [notes, id]);
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Lead não encontrado.' });
+        }
+        const updatedLead = await dbGet('SELECT * FROM leads WHERE id = ?', [id]);
+        res.json(updatedLead);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao atualizar notas do lead no SQLite.' });
     }
-
-    lead.notes = notes;
-    writeDb(db);
-    res.json(lead);
 });
 
-app.delete('/api/leads/:id', requireAuth, (req, res) => {
+app.delete('/api/leads/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
-    const db = readDb();
-    
-    const initialLength = db.leads.length;
-    db.leads = db.leads.filter(l => l.id !== id);
-
-    if (db.leads.length === initialLength) {
-        return res.status(404).json({ error: 'Lead não encontrado.' });
+    try {
+        const result = await dbRun('DELETE FROM leads WHERE id = ?', [id]);
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Lead não encontrado.' });
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao excluir lead no SQLite.' });
     }
-
-    writeDb(db);
-    res.json({ success: true });
 });
 
-// 3. Configurações (Público e Autenticado)
-app.get('/api/settings', (req, res) => {
-    const db = readDb();
-    res.json(db.settings);
+// 3. Configurações
+app.get('/api/settings', async (req, res) => {
+    try {
+        const settings = await dbGet('SELECT whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice FROM settings WHERE id = 1');
+        res.json(settings);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao buscar configurações no SQLite.' });
+    }
 });
 
-app.put('/api/settings', requireAuth, (req, res) => {
+app.put('/api/settings', requireAuth, async (req, res) => {
     const { whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice } = req.body;
-    const db = readDb();
+    try {
+        const current = await dbGet('SELECT * FROM settings WHERE id = 1');
 
-    db.settings = {
-        whatsappNumber: whatsappNumber || db.settings.whatsappNumber,
-        whatsappMessage: whatsappMessage || db.settings.whatsappMessage,
-        businessName: businessName || db.settings.businessName,
-        classPrice: classPrice || db.settings.classPrice,
-        courtPrice: courtPrice || db.settings.courtPrice
-    };
+        await dbRun(`
+            UPDATE settings
+            SET whatsappNumber = ?, whatsappMessage = ?, businessName = ?, classPrice = ?, courtPrice = ?
+            WHERE id = 1
+        `, [
+            whatsappNumber || current.whatsappNumber,
+            whatsappMessage || current.whatsappMessage,
+            businessName || current.businessName,
+            classPrice || current.classPrice,
+            courtPrice || current.courtPrice
+        ]);
 
-    writeDb(db);
-    res.json(db.settings);
+        const updated = await dbGet('SELECT whatsappNumber, whatsappMessage, businessName, classPrice, courtPrice FROM settings WHERE id = 1');
+        res.json(updated);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao salvar configurações no SQLite.' });
+    }
 });
 
-// 4. Administradores (Autenticado)
-app.get('/api/users', requireAuth, (req, res) => {
-    const db = readDb();
-    // Remove as senhas por segurança ao enviar a lista
-    const safeUsers = db.users.map(u => ({ username: u.username, name: u.name }));
-    res.json(safeUsers);
+// 4. Administradores
+app.get('/api/users', requireAuth, async (req, res) => {
+    try {
+        const users = await dbAll('SELECT username, name FROM users');
+        res.json(users);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao buscar administradores no SQLite.' });
+    }
 });
 
-app.post('/api/users', requireAuth, (req, res) => {
+app.post('/api/users', requireAuth, async (req, res) => {
     const { name, username, password } = req.body;
     if (!name || !username || !password) {
         return res.status(400).json({ error: 'Nome, usuário e senha são obrigatórios.' });
     }
 
-    const db = readDb();
-    if (db.users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-        return res.status(400).json({ error: 'Usuário já cadastrado.' });
-    }
+    try {
+        const existing = await dbGet('SELECT * FROM users WHERE LOWER(username) = ?', [username.toLowerCase()]);
+        if (existing) {
+            return res.status(400).json({ error: 'Usuário já cadastrado.' });
+        }
 
-    db.users.push({ name, username, password });
-    writeDb(db);
-    res.status(201).json({ username, name });
+        await dbRun('INSERT INTO users (username, password, name) VALUES (?, ?, ?)', [username, password, name]);
+        res.status(201).json({ username, name });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao cadastrar administrador no SQLite.' });
+    }
 });
 
-app.delete('/api/users/:username', requireAuth, (req, res) => {
+app.delete('/api/users/:username', requireAuth, async (req, res) => {
     const { username } = req.params;
-    const db = readDb();
+    try {
+        const users = await dbAll('SELECT * FROM users');
+        if (users.length <= 1) {
+            return res.status(400).json({ error: 'Não é possível remover o único administrador cadastrado.' });
+        }
 
-    if (db.users.length <= 1) {
-        return res.status(400).json({ error: 'Não é possível remover o único administrador cadastrado.' });
+        const result = await dbRun('DELETE FROM users WHERE LOWER(username) = ?', [username.toLowerCase()]);
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Administrador não encontrado.' });
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao excluir administrador no SQLite.' });
     }
-
-    const initialLength = db.users.length;
-    db.users = db.users.filter(u => u.username.toLowerCase() !== username.toLowerCase());
-
-    if (db.users.length === initialLength) {
-        return res.status(404).json({ error: 'Administrador não encontrado.' });
-    }
-
-    writeDb(db);
-    res.json({ success: true });
 });
 
 // --- SERVIR ARQUIVOS ESTÁTICOS COM SEGURANÇA ---
-// Não expõe a pasta "data" nem o Dockerfile ou package.json diretamente
 app.use('/css', express.static(path.join(__dirname, 'css')));
 app.use('/js', express.static(path.join(__dirname, 'js')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
@@ -290,7 +389,7 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
-// Qualquer outro arquivo raiz que for estático (ex: admin.html se acessado via /admin.html)
+// Servir qualquer arquivo raiz estático autorizado
 app.get('/:file', (req, res, next) => {
     const allowedRootFiles = ['index.html', 'admin.html', 'favicon.ico'];
     if (allowedRootFiles.includes(req.params.file)) {
@@ -302,7 +401,7 @@ app.get('/:file', (req, res, next) => {
 
 // Inicia o servidor
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-    console.log(`Acesse o site em: http://localhost:${PORT}`);
-    console.log(`Acesse o admin em: http://localhost:${PORT}/admin`);
+    console.log(`Servidor rodando com SQLite na porta ${PORT}`);
+    console.log(`Site: http://localhost:${PORT}`);
+    console.log(`Admin: http://localhost:${PORT}/admin`);
 });
