@@ -1,5 +1,5 @@
-# Utiliza a imagem oficial do Node.js (versão Alpine para menor tamanho)
-FROM node:18-alpine
+# Utiliza a imagem oficial do Node.js (versão slim baseada em Debian)
+FROM node:18-slim
 
 # Define o diretório de trabalho dentro do container
 WORKDIR /app
