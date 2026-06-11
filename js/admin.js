@@ -1,5 +1,10 @@
 import { Storage } from './storage.js';
 
+// Variáveis Globais do CRM
+let currentLeads = [];
+let activeLeadId = null;
+let currentView = 'table'; // 'table' ou 'kanban'
+
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializa telas baseado no estado de autenticação
     checkAuth();
@@ -10,11 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Eventos de Navegação por Abas
     setupTabNavigation();
 
-    // Eventos de Ações de Leads (Busca, Filtros, Exportação)
+    // Eventos de Ações de Leads (Busca, Filtros, Exportação, Alternar Visualização)
     setupCrmEvents();
 
-    // Eventos de Modais
-    setupModalEvents();
+    // Eventos do Drawer Lateral (Gaveta)
+    setupDrawerEvents();
 
     // Eventos de Configurações
     setupSettingsForms();
@@ -36,7 +41,7 @@ function checkAuth() {
         document.getElementById('currentAdminName').textContent = currentUser.name;
         
         // Inicializa dados do painel (assíncronos)
-        renderLeads();
+        refreshCRMData();
         loadSettingsInputs();
         renderAdmins();
     } else {
@@ -98,10 +103,13 @@ function setupTabNavigation() {
                 }
             });
 
+            // Fechar drawer caso mude de aba
+            closeDrawer();
+
             // Atualiza título da página
             if (targetTabId === 'tab-leads') {
                 pageTitle.textContent = 'Gestão de Leads (CRM)';
-                renderLeads(); // Recarrega leads ao voltar
+                refreshCRMData(); 
             } else if (targetTabId === 'tab-config-whatsapp') {
                 pageTitle.textContent = 'Configurar WhatsApp & Geral';
                 loadSettingsInputs();
@@ -113,151 +121,20 @@ function setupTabNavigation() {
     });
 }
 
-// --- CRM: LEADS ---
-let currentLeads = [];
-
-async function renderLeads() {
+// --- CRM: CORE DATA CONTROLLER ---
+async function refreshCRMData() {
     try {
         currentLeads = await Storage.getLeads();
-        
-        // Atualiza estatísticas no topo
         updateCRMStats(currentLeads);
-
-        const searchVal = document.getElementById('crmSearch').value.toLowerCase();
-        const statusFilter = document.getElementById('crmFilterStatus').value;
-        const interestFilter = document.getElementById('crmFilterInterest').value;
-
-        const leadsTableBody = document.getElementById('leadsTableBody');
-        const crmEmptyState = document.getElementById('crmEmptyState');
         
-        leadsTableBody.innerHTML = '';
-
-        // Filtragem
-        const filteredLeads = currentLeads.filter(lead => {
-            const matchesSearch = lead.name.toLowerCase().includes(searchVal) || 
-                                  lead.phone.toLowerCase().includes(searchVal) || 
-                                  lead.email.toLowerCase().includes(searchVal);
-                                  
-            const matchesStatus = statusFilter === '' || lead.status === statusFilter;
-            const matchesInterest = interestFilter === '' || lead.interest === interestFilter;
-
-            return matchesSearch && matchesStatus && matchesInterest;
-        });
-
-        // Ordena por data (mais recentes primeiro)
-        filteredLeads.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        if (filteredLeads.length === 0) {
-            crmEmptyState.style.display = 'block';
-            return;
+        if (currentView === 'table') {
+            renderLeadsTable();
         } else {
-            crmEmptyState.style.display = 'none';
+            renderLeadsKanban();
         }
-
-        filteredLeads.forEach(lead => {
-            const tr = document.createElement('tr');
-            
-            // Formata data
-            const formattedDate = new Date(lead.date).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            // Nome da opção de interesse formatada
-            const interestMap = {
-                'futevolei': 'Futevôlei',
-                'beachtennis': 'Beach Tennis',
-                'funcional': 'Funcional',
-                'aluguel': 'Aluguel Quadra',
-                'churrasqueira': 'Churrasqueira',
-                'ambos': 'Múltiplos'
-            };
-            const interestLabel = interestMap[lead.interest] || lead.interest;
-
-            const cleanPhone = lead.phone.replace(/\D/g, '');
-
-            tr.innerHTML = `
-                <td><strong>${lead.name}</strong></td>
-                <td>
-                    <a href="https://wa.me/${cleanPhone}" target="_blank" class="table-wa-link">
-                        <i class="fa-brands fa-whatsapp text-green"></i> ${lead.phone}
-                    </a>
-                </td>
-                <td>${lead.email}</td>
-                <td><span class="interest-badge">${interestLabel}</span></td>
-                <td>${formattedDate}</td>
-                <td>
-                    <select class="status-select-inline" data-id="${lead.id}">
-                        <option value="Novo" ${lead.status === 'Novo' ? 'selected' : ''}>Novo</option>
-                        <option value="Em Atendimento" ${lead.status === 'Em Atendimento' ? 'selected' : ''}>Em Atendimento</option>
-                        <option value="Convertido" ${lead.status === 'Convertido' ? 'selected' : ''}>Convertido</option>
-                        <option value="Perdido" ${lead.status === 'Perdido' ? 'selected' : ''}>Perdido</option>
-                    </select>
-                </td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-icon-table btn-notes" data-id="${lead.id}" title="Ver Anotações">
-                            <i class="fa-regular fa-clipboard"></i>
-                        </button>
-                        <button class="btn-icon-table btn-delete" data-id="${lead.id}" title="Excluir Lead">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                </td>
-            `;
-
-            // Modifica classe de acordo com status para fins estéticos no seletor
-            const statusSelect = tr.querySelector('.status-select-inline');
-            updateSelectClass(statusSelect);
-
-            // Evento de alteração de status
-            statusSelect.addEventListener('change', async (e) => {
-                const leadId = e.target.getAttribute('data-id');
-                const newStatus = e.target.value;
-                try {
-                    await Storage.updateLeadStatus(leadId, newStatus);
-                    updateSelectClass(e.target);
-                    // Recarrega estatísticas sem precisar renderizar a tabela inteira
-                    updateCRMStats(await Storage.getLeads());
-                } catch (error) {
-                    alert('Erro ao atualizar status do lead: ' + error.message);
-                }
-            });
-
-            // Evento para abrir anotações
-            tr.querySelector('.btn-notes').addEventListener('click', () => {
-                openNotesModal(lead.id, lead.name, lead.notes);
-            });
-
-            // Evento para excluir
-            tr.querySelector('.btn-delete').addEventListener('click', async () => {
-                if (confirm(`Tem certeza que deseja excluir o lead ${lead.name}?`)) {
-                    try {
-                        await Storage.deleteLead(lead.id);
-                        renderLeads();
-                    } catch (error) {
-                        alert('Erro ao excluir lead: ' + error.message);
-                    }
-                }
-            });
-
-            leadsTableBody.appendChild(tr);
-        });
     } catch (err) {
-        console.error('Erro ao renderizar leads:', err);
+        console.error('Erro ao atualizar dados do CRM:', err);
     }
-}
-
-function updateSelectClass(selectElement) {
-    selectElement.className = 'status-select-inline status-badge ';
-    const val = selectElement.value;
-    if (val === 'Novo') selectElement.classList.add('status-novo');
-    else if (val === 'Em Atendimento') selectElement.classList.add('status-atendimento');
-    else if (val === 'Convertido') selectElement.classList.add('status-convertido');
-    else if (val === 'Perdido') selectElement.classList.add('status-perdido');
 }
 
 function updateCRMStats(leads) {
@@ -265,27 +142,273 @@ function updateCRMStats(leads) {
     const novos = leads.filter(l => l.status === 'Novo').length;
     const convertidos = leads.filter(l => l.status === 'Convertido').length;
 
+    // Cálculo da taxa de conversão (Convertidos / Total)
+    const rate = total > 0 ? Math.round((convertidos / total) * 100) : 0;
+
     document.getElementById('stat-total-leads').textContent = total;
     document.getElementById('stat-new-leads').textContent = novos;
-    document.getElementById('stat-converted-leads').textContent = convertidos;
+    document.getElementById('stat-conversion-rate').textContent = `${rate}%`;
 }
 
+// Filtragem compartilhada (Tabela e Kanban)
+function getFilteredLeads() {
+    const searchVal = document.getElementById('crmSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('crmFilterStatus').value;
+    const interestFilter = document.getElementById('crmFilterInterest').value;
+
+    return currentLeads.filter(lead => {
+        const matchesSearch = lead.name.toLowerCase().includes(searchVal) || 
+                              lead.phone.toLowerCase().includes(searchVal) || 
+                              lead.email.toLowerCase().includes(searchVal);
+                              
+        const matchesStatus = statusFilter === '' || lead.status === statusFilter;
+        const matchesInterest = interestFilter === '' || lead.interest === interestFilter;
+
+        return matchesSearch && matchesStatus && matchesInterest;
+    });
+}
+
+// --- RENDERIZAR TABELA ---
+function renderLeadsTable() {
+    const filteredLeads = getFilteredLeads();
+    const leadsTableBody = document.getElementById('leadsTableBody');
+    const crmEmptyState = document.getElementById('crmEmptyState');
+    
+    leadsTableBody.innerHTML = '';
+
+    // Ordena por data (mais recentes primeiro)
+    filteredLeads.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (filteredLeads.length === 0) {
+        crmEmptyState.style.display = 'block';
+        return;
+    } else {
+        crmEmptyState.style.display = 'none';
+    }
+
+    filteredLeads.forEach(lead => {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-id', lead.id);
+        
+        // Formata data
+        const formattedDate = new Date(lead.date).toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+
+        const interestMap = {
+            'futevolei': 'Futevôlei',
+            'beachtennis': 'Beach Tennis',
+            'funcional': 'Funcional',
+            'aluguel': 'Aluguel Quadra',
+            'churrasqueira': 'Churrasqueira',
+            'ambos': 'Múltiplos'
+        };
+        const interestLabel = interestMap[lead.interest] || lead.interest;
+        const cleanPhone = lead.phone.replace(/\D/g, '');
+
+        tr.innerHTML = `
+            <td><strong>${lead.name}</strong></td>
+            <td>
+                <a href="https://wa.me/${cleanPhone}" target="_blank" class="table-wa-link" onclick="event.stopPropagation();">
+                    <i class="fa-brands fa-whatsapp text-green"></i> ${lead.phone}
+                </a>
+            </td>
+            <td>${lead.email}</td>
+            <td><span class="interest-badge">${interestLabel}</span></td>
+            <td>${formattedDate}</td>
+            <td>
+                <span class="status-badge status-${lead.status.toLowerCase().replace(' ', '-')}">${lead.status}</span>
+            </td>
+            <td>
+                <div class="table-actions" onclick="event.stopPropagation();">
+                    <select class="status-select-inline" data-id="${lead.id}">
+                        <option value="Novo" ${lead.status === 'Novo' ? 'selected' : ''}>Novo</option>
+                        <option value="Em Atendimento" ${lead.status === 'Em Atendimento' ? 'selected' : ''}>Em Atendimento</option>
+                        <option value="Convertido" ${lead.status === 'Convertido' ? 'selected' : ''}>Convertido</option>
+                        <option value="Perdido" ${lead.status === 'Perdido' ? 'selected' : ''}>Perdido</option>
+                    </select>
+                    <button class="btn-icon-table btn-delete" data-id="${lead.id}" title="Excluir Lead">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+
+        // Evento de clique na linha abre a gaveta (drawer)
+        tr.addEventListener('click', () => {
+            openDrawer(lead);
+        });
+
+        // Evento de alteração de status rápida na tabela
+        const statusSelect = tr.querySelector('.status-select-inline');
+        statusSelect.addEventListener('change', async (e) => {
+            const leadId = e.target.getAttribute('data-id');
+            const newStatus = e.target.value;
+            try {
+                await Storage.updateLeadStatus(leadId, newStatus);
+                refreshCRMData();
+            } catch (error) {
+                alert('Erro ao atualizar status: ' + error.message);
+            }
+        });
+
+        // Evento para excluir rápido na tabela
+        tr.querySelector('.btn-delete').addEventListener('click', async (e) => {
+            if (confirm(`Tem certeza que deseja excluir o lead ${lead.name}?`)) {
+                try {
+                    await Storage.deleteLead(lead.id);
+                    refreshCRMData();
+                } catch (error) {
+                    alert('Erro ao excluir: ' + error.message);
+                }
+            }
+        });
+
+        leadsTableBody.appendChild(tr);
+    });
+}
+
+// --- RENDERIZAR KANBAN ---
+function renderLeadsKanban() {
+    const filteredLeads = getFilteredLeads();
+    
+    // Mapeamento dos wrappers de cards
+    const columns = {
+        'Novo': {
+            wrapper: document.getElementById('cards-novo'),
+            count: document.getElementById('count-novo'),
+            leads: []
+        },
+        'Em Atendimento': {
+            wrapper: document.getElementById('cards-atendimento'),
+            count: document.getElementById('count-atendimento'),
+            leads: []
+        },
+        'Convertido': {
+            wrapper: document.getElementById('cards-convertido'),
+            count: document.getElementById('count-convertido'),
+            leads: []
+        },
+        'Perdido': {
+            wrapper: document.getElementById('cards-perdido'),
+            count: document.getElementById('count-perdido'),
+            leads: []
+        }
+    };
+
+    // Limpa wrappers
+    for (const key in columns) {
+        columns[key].wrapper.innerHTML = '';
+        columns[key].leads = [];
+    }
+
+    // Distribui os leads pelas colunas correspondentes
+    filteredLeads.forEach(lead => {
+        if (columns[lead.status]) {
+            columns[lead.status].leads.push(lead);
+        }
+    });
+
+    // Renderiza cada card nas colunas
+    const interestMap = {
+        'futevolei': 'Futevôlei',
+        'beachtennis': 'Beach Tennis',
+        'funcional': 'Funcional',
+        'aluguel': 'Aluguel',
+        'churrasqueira': 'Churrasqueira',
+        'ambos': 'Múltiplos'
+    };
+
+    for (const status in columns) {
+        const col = columns[status];
+        col.count.textContent = col.leads.length;
+
+        if (col.leads.length === 0) {
+            col.wrapper.innerHTML = `
+                <div class="empty-state" style="padding: 20px 0; font-size: 0.85rem;">
+                    <p>Sem leads</p>
+                </div>
+            `;
+            continue;
+        }
+
+        // Ordena mais recentes no topo
+        col.leads.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        col.leads.forEach(lead => {
+            const card = document.createElement('div');
+            card.className = 'kanban-card';
+            card.setAttribute('data-id', lead.id);
+
+            const formattedDate = new Date(lead.date).toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit'
+            });
+            const interestLabel = interestMap[lead.interest] || lead.interest;
+
+            card.innerHTML = `
+                <h5>${lead.name}</h5>
+                <span class="interest-badge">${interestLabel}</span>
+                <div class="kanban-card-meta">
+                    <span class="kanban-card-date"><i class="fa-regular fa-calendar"></i> ${formattedDate}</span>
+                    <span><i class="fa-brands fa-whatsapp text-green"></i></span>
+                </div>
+            `;
+
+            // Clique no card abre a gaveta (drawer)
+            card.addEventListener('click', () => {
+                openDrawer(lead);
+            });
+
+            col.wrapper.appendChild(card);
+        });
+    }
+}
+
+// --- SETUP DOS FILTROS E ALTERNAÇÃO DE VISUALIZAÇÃO ---
 function setupCrmEvents() {
     const crmSearch = document.getElementById('crmSearch');
     const crmFilterStatus = document.getElementById('crmFilterStatus');
     const crmFilterInterest = document.getElementById('crmFilterInterest');
     const btnExportCSV = document.getElementById('btnExportCSV');
+    
+    // Toggles de View
+    const btnViewTable = document.getElementById('btnViewTable');
+    const btnViewKanban = document.getElementById('btnViewKanban');
+    const tableContainer = document.getElementById('leadsTableContainer');
+    const kanbanContainer = document.getElementById('leadsKanbanContainer');
 
-    if (crmSearch) crmSearch.addEventListener('input', renderLeads);
-    if (crmFilterStatus) crmFilterStatus.addEventListener('change', renderLeads);
-    if (crmFilterInterest) crmFilterInterest.addEventListener('change', renderLeads);
+    if (crmSearch) crmSearch.addEventListener('input', refreshCRMData);
+    if (crmFilterStatus) crmFilterStatus.addEventListener('change', refreshCRMData);
+    if (crmFilterInterest) crmFilterInterest.addEventListener('change', refreshCRMData);
 
-    if (btnExportCSV) {
-        btnExportCSV.addEventListener('click', exportLeadsToCSV);
+    if (btnExportCSV) btnExportCSV.addEventListener('click', exportLeadsToCSV);
+
+    // Eventos de alternância de view
+    if (btnViewTable && btnViewKanban) {
+        btnViewTable.addEventListener('click', () => {
+            currentView = 'table';
+            btnViewTable.classList.add('active');
+            btnViewKanban.classList.remove('active');
+            tableContainer.style.display = 'block';
+            kanbanContainer.style.display = 'none';
+            refreshCRMData();
+        });
+
+        btnViewKanban.addEventListener('click', () => {
+            currentView = 'kanban';
+            btnViewKanban.classList.add('active');
+            btnViewTable.classList.remove('active');
+            tableContainer.style.display = 'none';
+            kanbanContainer.style.display = 'block';
+            refreshCRMData();
+        });
     }
 }
 
-// Exporta base de Leads para CSV compatível com Excel brasileiro (separado por ponto e vírgula)
+// Exporta para CSV
 async function exportLeadsToCSV() {
     try {
         const leads = await Storage.getLeads();
@@ -294,22 +417,21 @@ async function exportLeadsToCSV() {
             return;
         }
 
-        let csvContent = '\uFEFF'; // BOM para UTF-8 (corrige acentuação no Excel)
+        let csvContent = '\uFEFF'; 
         csvContent += 'Nome;WhatsApp;E-mail;Interesse;Data Cadastro;Status;Anotações\n';
+
+        const interestMap = {
+            'futevolei': 'Futevôlei',
+            'beachtennis': 'Beach Tennis',
+            'funcional': 'Funcional',
+            'aluguel': 'Aluguel Quadra',
+            'churrasqueira': 'Churrasqueira',
+            'ambos': 'Múltiplos'
+        };
 
         leads.forEach(lead => {
             const formattedDate = new Date(lead.date).toLocaleString('pt-BR');
-            const interestMap = {
-                'futevolei': 'Futevôlei',
-                'beachtennis': 'Beach Tennis',
-                'funcional': 'Funcional',
-                'aluguel': 'Aluguel Quadra',
-                'churrasqueira': 'Churrasqueira',
-                'ambos': 'Múltiplos'
-            };
             const interestLabel = interestMap[lead.interest] || lead.interest;
-            
-            // Limpa notas de possíveis quebras de linha para não corromper o CSV
             const cleanNotes = lead.notes.replace(/[\r\n]+/g, ' ').replace(/;/g, ',');
             
             csvContent += `"${lead.name}";"${lead.phone}";"${lead.email}";"${interestLabel}";"${formattedDate}";"${lead.status}";"${cleanNotes}"\n`;
@@ -319,7 +441,7 @@ async function exportLeadsToCSV() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `leads_varanda_beach_club_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `leads_varandas_beach_club_${new Date().toISOString().slice(0,10)}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -329,52 +451,145 @@ async function exportLeadsToCSV() {
     }
 }
 
-// --- MODAL DE NOTAS ---
-const notesModal = document.getElementById('notesModal');
-const modalNotesLeadName = document.getElementById('modalNotesLeadName');
-const modalNotesLeadId = document.getElementById('modalNotesLeadId');
-const modalNotesTextarea = document.getElementById('modalNotesTextarea');
-const closeNotesModalBtn = document.getElementById('closeNotesModalBtn');
+// --- DRAWER DE DETALHES DO LEAD (GAVETA LATERAL) ---
+const leadDrawer = document.getElementById('leadDrawer');
+const drawerOverlay = document.getElementById('drawerOverlay');
+const closeDrawerBtn = document.getElementById('closeDrawerBtn');
 
-function openNotesModal(leadId, leadName, leadNotes) {
-    if (notesModal) {
-        modalNotesLeadId.value = leadId;
-        modalNotesLeadName.textContent = leadName;
-        modalNotesTextarea.value = leadNotes;
-        notesModal.classList.add('show');
+function openDrawer(lead) {
+    if (!leadDrawer || !drawerOverlay) return;
+
+    activeLeadId = lead.id;
+
+    // Atualiza badges e classes de status
+    const statusBadge = document.getElementById('drawerLeadStatusBadge');
+    statusBadge.textContent = lead.status;
+    statusBadge.className = `status-badge status-${lead.status.toLowerCase().replace(' ', '-')}`;
+
+    // Atualiza Textos Básicos
+    document.getElementById('drawerLeadName').textContent = lead.name;
+    
+    const formattedDate = new Date(lead.date).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+    document.getElementById('drawerLeadDate').textContent = `Cadastrado em ${formattedDate}`;
+    
+    document.getElementById('drawerDetailPhone').textContent = lead.phone;
+    document.getElementById('drawerDetailEmail').textContent = lead.email;
+
+    const interestMap = {
+        'futevolei': 'Aulas de Futevôlei',
+        'beachtennis': 'Aulas de Beach Tennis',
+        'funcional': 'Treino Funcional na Areia',
+        'aluguel': 'Aluguel de Quadras',
+        'churrasqueira': 'Aluguel de Churrasqueira',
+        'ambos': 'Múltiplos Interesses'
+    };
+    document.getElementById('drawerDetailInterest').textContent = interestMap[lead.interest] || lead.interest;
+
+    // Dropdown de Status
+    document.getElementById('drawerStatusSelect').value = lead.status;
+
+    // Notas de atendimento
+    document.getElementById('drawerNotesTextarea').value = lead.notes;
+
+    // Links de Ação Rápida
+    const cleanPhone = lead.phone.replace(/\D/g, '');
+    const waText = encodeURIComponent(`Olá ${lead.name}! Aqui é do Varandas Beach Club, tudo bem?`);
+    document.getElementById('btnDrawerWhatsApp').href = `https://wa.me/${cleanPhone}?text=${waText}`;
+    document.getElementById('btnDrawerEmail').href = `mailto:${lead.email}?subject=Varandas%20Beach%20Club`;
+
+    // Exibe a gaveta e overlay com animação
+    leadDrawer.classList.add('open');
+    drawerOverlay.classList.add('open');
+}
+
+function closeDrawer() {
+    if (leadDrawer && drawerOverlay) {
+        leadDrawer.classList.remove('open');
+        drawerOverlay.classList.remove('open');
+        activeLeadId = null;
     }
 }
 
-function closeNotesModal() {
-    if (notesModal) {
-        notesModal.classList.remove('show');
-    }
-}
+function setupDrawerEvents() {
+    if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
+    if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
 
-function setupModalEvents() {
-    if (closeNotesModalBtn) {
-        closeNotesModalBtn.addEventListener('click', closeNotesModal);
-    }
-
-    window.addEventListener('click', (e) => {
-        if (e.target === notesModal) {
-            closeNotesModal();
+    // Atalho tecla ESC para fechar gaveta
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeDrawer();
         }
     });
 
-    const leadNotesForm = document.getElementById('leadNotesForm');
-    if (leadNotesForm) {
-        leadNotesForm.addEventListener('submit', async (e) => {
+    // Form de Notas do Drawer
+    const drawerNotesForm = document.getElementById('drawerNotesForm');
+    if (drawerNotesForm) {
+        drawerNotesForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const leadId = modalNotesLeadId.value;
-            const notes = modalNotesTextarea.value;
-            
+            if (!activeLeadId) return;
+
+            const notes = document.getElementById('drawerNotesTextarea').value;
             try {
-                await Storage.updateLeadNotes(leadId, notes);
-                closeNotesModal();
-                renderLeads(); // Atualiza tabela para persistir visualmente
+                await Storage.updateLeadNotes(activeLeadId, notes);
+                alert('Anotações salvas com sucesso!');
+                // Atualiza dados e recarrega os leads para sincronizar a memória local
+                const updatedLeads = await Storage.getLeads();
+                const updatedLead = updatedLeads.find(l => l.id === activeLeadId);
+                currentLeads = updatedLeads;
+                
+                if (updatedLead) {
+                    // Atualiza a gaveta com o novo dado sem precisar fechá-la
+                    document.getElementById('drawerNotesTextarea').value = updatedLead.notes;
+                }
+                
+                // Atualiza visualizações em background
+                if (currentView === 'table') renderLeadsTable();
+                else renderLeadsKanban();
             } catch (err) {
-                alert('Erro ao atualizar notas: ' + err.message);
+                alert('Erro ao salvar observações: ' + err.message);
+            }
+        });
+    }
+
+    // Select de Status no Drawer
+    const drawerStatusSelect = document.getElementById('drawerStatusSelect');
+    if (drawerStatusSelect) {
+        drawerStatusSelect.addEventListener('change', async (e) => {
+            if (!activeLeadId) return;
+
+            const newStatus = e.target.value;
+            try {
+                await Storage.updateLeadStatus(activeLeadId, newStatus);
+                
+                // Atualiza crachá superior do drawer
+                const badge = document.getElementById('drawerLeadStatusBadge');
+                badge.textContent = newStatus;
+                badge.className = `status-badge status-${newStatus.toLowerCase().replace(' ', '-')}`;
+
+                refreshCRMData();
+            } catch (err) {
+                alert('Erro ao atualizar status: ' + err.message);
+            }
+        });
+    }
+
+    // Botão de Exclusão no Drawer
+    const btnDrawerDeleteLead = document.getElementById('btnDrawerDeleteLead');
+    if (btnDrawerDeleteLead) {
+        btnDrawerDeleteLead.addEventListener('click', async () => {
+            if (!activeLeadId) return;
+            const leadName = document.getElementById('drawerLeadName').textContent;
+
+            if (confirm(`Tem certeza que deseja excluir o lead ${leadName} definitivamente?`)) {
+                try {
+                    await Storage.deleteLead(activeLeadId);
+                    closeDrawer();
+                    refreshCRMData();
+                } catch (err) {
+                    alert('Erro ao excluir lead: ' + err.message);
+                }
             }
         });
     }
@@ -390,7 +605,7 @@ async function loadSettingsInputs() {
         document.getElementById('config-wa-message').value = settings.whatsappMessage;
 
         // General Config Form
-        document.getElementById('config-business-name').value = settings.businessName || 'Varanda Beach Club';
+        document.getElementById('config-business-name').value = settings.businessName || 'Varandas Beach Club';
         document.getElementById('config-class-price').value = settings.classPrice || 'R$ 150/mês';
         document.getElementById('config-court-price').value = settings.courtPrice || 'R$ 80/hora';
     } catch (err) {

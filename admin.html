@@ -15,7 +15,7 @@
 </head>
 <body>
 
-    <!-- TELA DE LOGIN (Escondida por padrão se logado) -->
+    <!-- TELA DE LOGIN -->
     <div id="loginScreen" class="login-container">
         <div class="login-card glass-card">
             <div class="login-header text-center">
@@ -50,7 +50,7 @@
         </div>
     </div>
 
-    <!-- PAINEL ADMINISTRATIVO PRINCIPAL (Escondido por padrão se deslogado) -->
+    <!-- PAINEL ADMINISTRATIVO PRINCIPAL -->
     <div id="adminPanel" class="admin-layout" style="display: none;">
         
         <!-- Sidebar -->
@@ -106,6 +106,7 @@
                 
                 <!-- ABA 1: GESTÃO DE LEADS (CRM) -->
                 <div id="tab-leads" class="tab-content active">
+                    
                     <!-- Cards de Resumo -->
                     <div class="stats-grid">
                         <div class="stat-card glass-card border-left-blue">
@@ -128,11 +129,11 @@
                         </div>
                         <div class="stat-card glass-card border-left-green">
                             <div class="stat-card-info">
-                                <span class="stat-card-label">Convertidos</span>
-                                <h3 class="stat-card-value" id="stat-converted-leads">0</h3>
+                                <span class="stat-card-label">Conversão</span>
+                                <h3 class="stat-card-value" id="stat-conversion-rate">0%</h3>
                             </div>
                             <div class="stat-card-icon bg-soft-green">
-                                <i class="fa-solid fa-circle-check"></i>
+                                <i class="fa-solid fa-chart-line"></i>
                             </div>
                         </div>
                     </div>
@@ -142,7 +143,7 @@
                         <div class="filter-group">
                             <div class="input-wrapper search-wrapper">
                                 <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="crmSearch" placeholder="Buscar por nome, telefone ou e-mail...">
+                                <input type="text" id="crmSearch" placeholder="Buscar por nome, telefone...">
                             </div>
                             
                             <select id="crmFilterStatus" class="select-filter">
@@ -163,13 +164,25 @@
                                 <option value="ambos">Múltiplos</option>
                             </select>
                         </div>
-                        <button class="btn btn-secondary" id="btnExportCSV">
-                            <i class="fa-solid fa-file-csv"></i> Exportar CSV
-                        </button>
+                        
+                        <div class="action-group">
+                            <!-- Visualização Toggle -->
+                            <div class="view-toggle-container">
+                                <button class="btn btn-secondary btn-sm active" id="btnViewTable" title="Visualização em Lista">
+                                    <i class="fa-solid fa-list"></i>
+                                </button>
+                                <button class="btn btn-secondary btn-sm" id="btnViewKanban" title="Visualização em Kanban">
+                                    <i class="fa-solid fa-table-columns"></i>
+                                </button>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" id="btnExportCSV">
+                                <i class="fa-solid fa-file-csv"></i> Exportar CSV
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Tabela de Leads -->
-                    <div class="table-container glass-card">
+                    <div class="table-container glass-card" id="leadsTableContainer">
                         <table class="crm-table">
                             <thead>
                                 <tr>
@@ -191,6 +204,47 @@
                             <p>Nenhum lead encontrado para os filtros aplicados.</p>
                         </div>
                     </div>
+
+                    <!-- Quadro Kanban -->
+                    <div class="kanban-container" id="leadsKanbanContainer" style="display: none;">
+                        <div class="kanban-board">
+                            <!-- Coluna Novo -->
+                            <div class="kanban-column" data-status="Novo">
+                                <div class="kanban-column-header border-top-blue">
+                                    <span class="column-title"><i class="fa-regular fa-circle-dot"></i> Novo</span>
+                                    <span class="column-count" id="count-novo">0</span>
+                                </div>
+                                <div class="kanban-cards-wrapper" id="cards-novo"></div>
+                            </div>
+                            
+                            <!-- Coluna Em Atendimento -->
+                            <div class="kanban-column" data-status="Em Atendimento">
+                                <div class="kanban-column-header border-top-orange">
+                                    <span class="column-title"><i class="fa-solid fa-arrows-spin"></i> Em Atendimento</span>
+                                    <span class="column-count" id="count-atendimento">0</span>
+                                </div>
+                                <div class="kanban-cards-wrapper" id="cards-atendimento"></div>
+                            </div>
+                            
+                            <!-- Coluna Convertido -->
+                            <div class="kanban-column" data-status="Convertido">
+                                <div class="kanban-column-header border-top-green">
+                                    <span class="column-title"><i class="fa-regular fa-circle-check"></i> Convertido</span>
+                                    <span class="column-count" id="count-convertido">0</span>
+                                </div>
+                                <div class="kanban-cards-wrapper" id="cards-convertido"></div>
+                            </div>
+
+                            <!-- Coluna Perdido -->
+                            <div class="kanban-column" data-status="Perdido">
+                                <div class="kanban-column-header border-top-red">
+                                    <span class="column-title"><i class="fa-regular fa-circle-xmark"></i> Perdido</span>
+                                    <span class="column-count" id="count-perdido">0</span>
+                                </div>
+                                <div class="kanban-cards-wrapper" id="cards-perdido"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ABA 2: CONFIGURAR WHATSAPP E NEGÓCIO -->
@@ -207,7 +261,7 @@
                                     <label for="config-wa-number">Número do WhatsApp (com DDI + DDD)</label>
                                     <div class="input-wrapper">
                                         <i class="fa-brands fa-whatsapp"></i>
-                                        <input type="text" id="config-wa-number" placeholder="Ex: 5511999999999" required>
+                                        <input type="text" id="config-wa-number" placeholder="Ex: 5521971475005" required>
                                     </div>
                                     <small class="form-help">Insira o código do país (55 para Brasil), DDD e o número, sem espaços, traços ou parênteses.</small>
                                 </div>
@@ -325,26 +379,77 @@
         </main>
     </div>
 
-    <!-- Modal para Notas / Anotações do Lead -->
-    <div id="notesModal" class="modal">
-        <div class="modal-content glass-card animated-modal">
-            <span class="close-modal" id="closeNotesModalBtn">&times;</span>
-            <div class="modal-header">
-                <h2><i class="fa-regular fa-clipboard"></i> Notas de Atendimento</h2>
-                <p>Atualize as anotações sobre o lead <strong id="modalNotesLeadName"></strong></p>
-            </div>
-            <form id="leadNotesForm">
-                <input type="hidden" id="modalNotesLeadId">
-                <div class="form-group">
-                    <label for="modalNotesTextarea">Histórico de Contato / Observações</label>
-                    <div class="input-wrapper">
-                        <textarea id="modalNotesTextarea" rows="6" placeholder="Descreva aqui o andamento do atendimento (ex: Ligou dia 12, agendou aula para sábado)" style="width: 100%; border: 1px solid var(--glass-border); padding: 15px; color: white; background: rgba(10, 25, 47, 0.5); border-radius: 8px; font-family: inherit; font-size: 0.95rem; resize: vertical; outline: none;"></textarea>
-                    </div>
+    <!-- SLIDE-OVER DRAWER (GAVETA DE DETALHES DO LEAD) -->
+    <div id="leadDrawer" class="drawer">
+        <div class="drawer-header">
+            <button class="btn-close-drawer" id="closeDrawerBtn"><i class="fa-solid fa-xmark"></i></button>
+            <span class="status-badge" id="drawerLeadStatusBadge">Novo</span>
+        </div>
+        <div class="drawer-body">
+            <div class="lead-profile-summary">
+                <div class="lead-avatar">
+                    <i class="fa-solid fa-user"></i>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">Salvar Anotações <i class="fa-solid fa-save"></i></button>
-            </form>
+                <h2 id="drawerLeadName">Nome do Lead</h2>
+                <span class="lead-date-label" id="drawerLeadDate">Cadastrado em 12/06/2026</span>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="drawer-quick-actions">
+                <a href="#" target="_blank" class="btn btn-primary" id="btnDrawerWhatsApp">
+                    <i class="fa-brands fa-whatsapp"></i> Iniciar WhatsApp
+                </a>
+                <a href="#" class="btn btn-secondary" id="btnDrawerEmail">
+                    <i class="fa-regular fa-envelope"></i> Enviar E-mail
+                </a>
+            </div>
+
+            <!-- Informações Gerais -->
+            <div class="drawer-section">
+                <h3>Detalhes do Cadastro</h3>
+                <div class="detail-row">
+                    <span class="detail-label">WhatsApp</span>
+                    <span class="detail-value" id="drawerDetailPhone">(21) 97147-5005</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">E-mail</span>
+                    <span class="detail-value" id="drawerDetailEmail">diogo@email.com</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Interesse</span>
+                    <span class="detail-value" id="drawerDetailInterest">Futevôlei</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Alterar Status</span>
+                    <select id="drawerStatusSelect" class="status-select-inline select-block">
+                        <option value="Novo">Novo</option>
+                        <option value="Em Atendimento">Em Atendimento</option>
+                        <option value="Convertido">Convertido</option>
+                        <option value="Perdido">Perdido</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Notas de Atendimento -->
+            <div class="drawer-section">
+                <h3>Histórico de Contato / Anotações</h3>
+                <form id="drawerNotesForm" class="drawer-notes-form">
+                    <textarea id="drawerNotesTextarea" rows="5" placeholder="Digite aqui observações adicionais sobre o atendimento (Ex: Ligou mas estava ocupado, agendou experimental para quarta...)"></textarea>
+                    <button type="submit" class="btn btn-secondary btn-sm btn-block">Salvar Histórico <i class="fa-regular fa-floppy-disk"></i></button>
+                </form>
+            </div>
+            
+            <!-- Perigo -->
+            <div class="drawer-section border-top-red" style="margin-top: 40px; padding-top: 20px;">
+                <button class="btn btn-secondary btn-sm btn-block btn-delete-danger" id="btnDrawerDeleteLead">
+                    <i class="fa-solid fa-trash-can"></i> Excluir Lead Permanentemente
+                </button>
+            </div>
         </div>
     </div>
+    
+    <!-- Overlay da Gaveta -->
+    <div id="drawerOverlay" class="drawer-overlay"></div>
 
     <!-- Scripts -->
     <script type="module" src="js/admin.js"></script>
