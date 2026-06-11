@@ -194,6 +194,111 @@ async function loadDynamicSettings() {
             }
         }
 
+        // 7. Geração de Schema JSON-LD Dinâmico (SEO Baseado em Entidades)
+        const schemaScript = document.getElementById('schema-jsonld');
+        if (schemaScript) {
+            const clubName = settings.businessName || 'Varandas Beach Club';
+            const address = settings.businessAddress || 'Estrada Visconde de Sinimbu, 785';
+            const whatsapp = settings.whatsappNumber ? `+${settings.whatsappNumber}` : '';
+            const email = settings.businessEmail || 'contato@varandasbeachclub.com.br';
+            const instagram = settings.instagramUrl || 'https://www.instagram.com/varandasbeachclub';
+            const currentUrl = window.location.origin + window.location.pathname;
+
+            const entitySchema = {
+                "@context": "https://schema.org",
+                "@type": "SportsActivityLocation",
+                "@id": `${currentUrl}#club`,
+                "name": clubName,
+                "description": settings.seoDescription || "Varandas Beach Club - Aulas de Futevôlei, Beach Tennis, Funcional e Aluguel de Quadras de Areia.",
+                "url": currentUrl,
+                "telephone": whatsapp,
+                "email": email,
+                "address": {
+                    "@type": "PostalAddress",
+                    "streetAddress": address,
+                    "addressLocality": "Rio de Janeiro",
+                    "addressRegion": "RJ",
+                    "addressCountry": "BR"
+                },
+                "geo": {
+                    "@type": "GeoCoordinates",
+                    "latitude": "-22.986",
+                    "longitude": "-43.218"
+                },
+                "openingHoursSpecification": {
+                    "@type": "OpeningHoursSpecification",
+                    "dayOfWeek": [
+                        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+                    ],
+                    "opens": "18:00",
+                    "closes": "23:00"
+                },
+                "sameAs": [
+                    instagram
+                ],
+                "hasOfferCatalog": {
+                    "@type": "OfferCatalog",
+                    "name": "Serviços de Esporte e Lazer",
+                    "itemListElement": [
+                        {
+                            "@type": "Offer",
+                            "itemOffered": {
+                                "@type": "Service",
+                                "name": "Aulas de Futevôlei",
+                                "description": "Aulas de futevôlei para todos os níveis com acompanhamento profissional."
+                            },
+                            "priceSpecification": {
+                                "@type": "UnitPriceSpecification",
+                                "price": settings.classPrice ? parseFloat(settings.classPrice.replace(/[^0-9.]/g, '')) || 150 : 150,
+                                "priceCurrency": "BRL"
+                            }
+                        },
+                        {
+                            "@type": "Offer",
+                            "itemOffered": {
+                                "@type": "Service",
+                                "name": "Aulas de Beach Tennis",
+                                "description": "Treinamento dinâmico de Beach Tennis com fornecimento de equipamentos."
+                            },
+                            "priceSpecification": {
+                                "@type": "UnitPriceSpecification",
+                                "price": settings.beachTennisPrice ? parseFloat(settings.beachTennisPrice.replace(/[^0-9.]/g, '')) || 0 : 0,
+                                "priceCurrency": "BRL"
+                            }
+                        },
+                        {
+                            "@type": "Offer",
+                            "itemOffered": {
+                                "@type": "Service",
+                                "name": "Treinamento Funcional na Areia",
+                                "description": "Condicionamento físico e fortalecimento muscular na areia tratada."
+                            },
+                            "priceSpecification": {
+                                "@type": "UnitPriceSpecification",
+                                "price": settings.functionalPrice ? parseFloat(settings.functionalPrice.replace(/[^0-9.]/g, '')) || 130 : 130,
+                                "priceCurrency": "BRL"
+                            }
+                        },
+                        {
+                            "@type": "Offer",
+                            "itemOffered": {
+                                "@type": "Service",
+                                "name": "Aluguel de Quadra de Areia",
+                                "description": "Aluguel de quadra de areia premium por hora para Futevôlei, Vôlei de Areia ou Beach Tennis."
+                            },
+                            "priceSpecification": {
+                                "@type": "UnitPriceSpecification",
+                                "price": settings.courtPrice ? parseFloat(settings.courtPrice.replace(/[^0-9.]/g, '')) || 80 : 80,
+                                "priceCurrency": "BRL"
+                            }
+                        }
+                    ]
+                }
+            };
+
+            schemaScript.textContent = JSON.stringify(entitySchema, null, 2);
+        }
+
     } catch (err) {
         console.error('Erro ao carregar configurações dinâmicas:', err);
     }
