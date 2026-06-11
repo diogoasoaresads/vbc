@@ -243,6 +243,21 @@ img {
     gap: 10px;
 }
 
+.logo img {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+    transition: height var(--transition-fast);
+}
+
+.main-header.scrolled .logo img {
+    height: 38px;
+}
+
+.main-footer .logo img {
+    height: 55px;
+}
+
 .logo i {
     color: var(--color-primary);
 }
